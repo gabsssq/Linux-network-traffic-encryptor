@@ -7,7 +7,7 @@ Help()
    echo
 }
 
-if [ $1 = "" ] || [ $1 = "-help" ] || [ $1 = "-h" ]
+if [ $# -lt 1 ] || [ $1 = "-help" ] || [ $1 = "-h" ]
 then
 Help
 exit 1
