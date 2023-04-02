@@ -13,6 +13,9 @@ Help
 exit 1
 fi
 
+# Instalace zavislosti
+cat requirements.txt | sudo xargs apt install -y
+
 # Udaj pro smerovani
 Route_IP=$1
 
@@ -32,7 +35,7 @@ sudo ip tuntap add name tun0 mode tun
 sudo ip link set tun0 up
 sudo ip addr add 192.168.1.1 peer 192.168.1.2 dev tun0
 
-echo "1" > /proc/sys/net/ipv4/ip_forward
+echo "1" | sudo tee /proc/sys/net/ipv4/ip_forward
 ip route add $Route_IP via 192.168.1.2
 
 g++ -std=c++20 -I /usr/local/include/ -I ../kyber/include/ -I ../kyber/subtle/include/ -I ../kyber/sha3/include/ ../sifrator/sifrator.cpp  /usr/local/lib/libcryptopp.a -o sifrator.exe
