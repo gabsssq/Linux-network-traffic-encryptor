@@ -7,3 +7,4 @@ mkdir /var/www/html/klic
 mkdir /var/www/html/ID
 cp index-klic.php /var/www/html/klic/index.php
 cp index-ID.php /var/www/html/ID/index.php
+(cd /var/www/html && fallocate -l 1G test)
