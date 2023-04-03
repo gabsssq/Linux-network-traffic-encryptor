@@ -1,6 +1,7 @@
 #!/bin/sh
 apt-get install apache2
 apt-get install php7.4
+a2dismod mpm_event
 a2enmod php7.4
 service apache2 reload
 mkdir /var/www/html/klic
