@@ -1,0 +1,22 @@
+Tento manuál popisuje kroky ke zprovoznění linuxového šifrátoru.
+
+Topologie šifrátoru:
+
+Klient <---> Šifrovací brána 1 <---> Šifrovací brána 2 <---> Server
+
+1) Stáhnout a nainstalovat linuxový obraz např. z https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-11.6.0-amd64-netinst.iso
+2) Nastavit adresy rozhraní, pokud není nastaveno DHCP (ifconfig [název rozhrani] [IP adresa] netmask [maska sítě])
+   - pokud není dostupný ifconfig, je potřeba provést příkaz apt-get install net-tools
+3) Stáhnout git repozitář (git clone https://github.com/gabsssq/sifrator.git)
+4) cd sifrator/
+   
+Klient a server:
+1) Omezit MTU rozhraní na 1460 bytů (ifconfig [název_rozhrani] mtu 1460 up)
+2) Přidat výchozí cestu přes šifrovací bránu (ip route add 0.0.0.0/0 via [IP šifrovací brány])
+3) Spustit skript pro instalaci QKD simulátoru (./install_QKD)
+
+Šifrovací brány:
+1) Spustit skript pro instalaci sifratoru (./install [IP sítě druhé brány])
+2) Spustit šifrátor na 1. bráně (./sifrator.exe server [IP QKD simulatoru - IP Klienta])
+3) Spustit šifrátor na 2. bráně (./sifrator.exe klient [IP QKD simulatoru - IP Serveru] [IP šifrovací brány 1])
+
