@@ -13,10 +13,10 @@ Klient <---> Šifrovací brána 1 <---> Šifrovací brána 2 <---> Server
 Klient a server:
 1) Omezit MTU rozhraní na 1460 bytů (ifconfig [název_rozhrani] mtu 1460 up)
 2) Přidat výchozí cestu přes šifrovací bránu (ip route add 0.0.0.0/0 via [IP šifrovací brány])
-3) Spustit skript pro instalaci QKD simulátoru (./install_QKD)
+3) Spustit skript pro instalaci QKD simulátoru (./install_QKD.sh)
 
 Šifrovací brány:
-1) Spustit skript pro instalaci sifratoru (./install [IP sítě druhé brány])
+1) Spustit skript pro instalaci sifratoru (./install.sh [IP sítě druhé brány])
 2) Spustit šifrátor na 1. bráně (./sifrator.exe server [IP QKD simulatoru - IP Klienta])
 3) Spustit šifrátor na 2. bráně (./sifrator.exe klient [IP QKD simulatoru - IP Serveru] [IP šifrovací brány 1])
 
