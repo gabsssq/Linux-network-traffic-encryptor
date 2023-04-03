@@ -3,7 +3,7 @@ apt-get install apache2
 apt-get install php7.4
 a2dismod mpm_event
 a2enmod php7.4
-service apache2 reload
+systemctl restart apache2
 mkdir /var/www/html/klic
 mkdir /var/www/html/ID
 cp index-klic.php /var/www/html/klic/index.php
