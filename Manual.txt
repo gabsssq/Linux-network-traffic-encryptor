@@ -8,7 +8,7 @@ Klient <---> Šifrovací brána 1 <---> Šifrovací brána 2 <---> Server
 2) Nastavit adresy rozhraní, pokud není nastaveno DHCP (ifconfig [název rozhrani] [IP adresa] netmask [maska sítě])
    - pokud není dostupný ifconfig, je potřeba provést příkaz apt-get install net-tools
 3) Stáhnout git repozitář (git clone https://github.com/gabsssq/sifrator.git)
-4) cd sifrator/
+4) cd sifrator && chmod +x install.sh && chmod +x install_QKD.sh
    
 Klient a server:
 1) Omezit MTU rozhraní na 1460 bytů (ifconfig [název_rozhrani] mtu 1460 up)
@@ -18,5 +18,4 @@ Klient a server:
 Šifrovací brány:
 1) Spustit skript pro instalaci sifratoru (./install.sh [IP sítě druhé brány])
 2) Spustit šifrátor na 1. bráně (./sifrator.exe server [IP QKD simulatoru - IP Klienta])
-3) Spustit šifrátor na 2. bráně (./sifrator.exe klient [IP QKD simulatoru - IP Serveru] [IP šifrovací brány 1])
-
+3) Spustit šifrátor na 2. bráně (./sifrator.exe klient [IP QKD simulatoru - IP Serveru] [IP druhé šifrovací brány])
