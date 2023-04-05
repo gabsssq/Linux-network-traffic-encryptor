@@ -259,9 +259,14 @@ Posilani (sockfd, servaddr, sifrtext, len);
 return false;
 }
 
-// Predpripravena funkce pro reseni dynamickeho NATu
-void KeepAlive(){
-system("ping 192.168.10.7  > /dev/null 2>&1");
+// Funkce pro udrzeni dynamickeho NATu zaznamu
+void KeepAlive(int TCPsocket, int UDPsocket, struct sockaddr_in cliaddr, socklen_t len){
+const char* keepalive = "Keep Alive";
+while(!stop){
+sleep(1);
+send(TCPsocket, keepalive, strlen(keepalive), 0);
+sendto(UDPsocket, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+}
 }
 
 
@@ -508,14 +513,6 @@ const char *hello = "Hello from client";
 */
 fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
-/*
-   Pripraveno vytvoreni vlakna pro dynamicky NAT
-   pri kompilovani je nutno pridat priznak -pthread
-
-std::thread t1(KeepAlive);
-t1.detach();
-*/
-
 // Nastaveni klice pro AES
 key = VymenaKlice_cli(client_fd, pqc_key, qkd_ip);
 
@@ -700,7 +697,12 @@ const char *hello = "Hello from server";
     std::cout<<"Hello message sent."<<std::endl;
 
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
-
+	
+// Vlakno pro dynamicky NAT
+std::thread t1(KeepAlive, new_socket, sockfd, cliaddr, len);
+t1.detach();
+	
+	
 char bufferTCP[MAXLINE] = { 0 };
 std::ofstream myfile;
 
@@ -732,6 +734,8 @@ pid_t frk = fork();
 // Odchyceni CTRL + C pro ukonceni nekonecne smycky
 signal(SIGINT, inthand);
 
+// Promenna pro kontrolu stavu TCP spoje
+int status
 while (!stop){
 
 /*
@@ -749,7 +753,11 @@ while (!stop){
 
 */
 if (frk > 0){
-if(read(new_socket, bufferTCP, MAXLINE ) > 0){
+status = read(new_socket, bufferTCP, MAXLINE);
+if (status == 0){
+stop = true;
+}
+else if(status > 0){
 kill(frk, SIGTERM);
 myfile.open ("keyID");
 myfile<< bufferTCP;
