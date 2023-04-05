@@ -417,7 +417,6 @@ const char* srv_ip = argv[3];
 // Vytvoreni klicu pro KEM
     uint8_t pkey[kyber512_kem::pub_key_len()];
     uint8_t skey[kyber512_kem::sec_key_len()];
-    uint8_t cipher[kyber512_kem::cipher_text_len()];
     prng::prng_t prng;
 
     kyber512_kem::keygen(prng, pkey, skey);
@@ -431,7 +430,7 @@ string tun = "tun0";
 tundesc = tun_open(&tun[0]);
 
 // Vytvoreni TCP socketu a zkouska spojeni vymenou Hello zprav
-int status, valread, client_fd;
+int status, client_fd;
     struct sockaddr_in serv_addr;
     const char* helloTCP = "Hello from client";
     char buffer[MAXLINE] = { 0 };
@@ -582,8 +581,6 @@ return 0;
 
 else if (!cli_srv){
 
-    uint8_t pkey[kyber512_kem::pub_key_len()];
-    uint8_t skey[kyber512_kem::sec_key_len()];
     uint8_t cipher[kyber512_kem::cipher_text_len()];
     prng::prng_t prng;
 
@@ -597,7 +594,7 @@ tundesc = tun_open(&tun[0]);
 
 
 // Vytvoreni TCP socketu a zkouska spojeni vymenou Hello zprav
-    int server_fd, new_socket, valread;
+    int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
