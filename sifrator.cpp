@@ -459,7 +459,7 @@ int status, client_fd;
     }
     send(client_fd, helloTCP, strlen(helloTCP), 0);
     printf("Hello message sent\n");
-    valread = read(client_fd, buffer, MAXLINE);
+    read(client_fd, buffer, MAXLINE);
     printf("%s\n", buffer);
 
 /*
@@ -469,7 +469,7 @@ int status, client_fd;
 */
 
     send(client_fd, pkey, sizeof(pkey), 0);
-    valread = read(client_fd, buffer, MAXLINE);
+    read(client_fd, buffer, MAXLINE);
     auto rkdf = kyber512_kem::decapsulate(skey, (const unsigned char*)buffer);
     uint8_t* shrd_key = static_cast<uint8_t*>(std::malloc(32));
     rkdf.read(shrd_key, 32);
@@ -633,7 +633,7 @@ tundesc = tun_open(&tun[0]);
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    valread = read(new_socket, buffer, MAXLINE);
+    read(new_socket, buffer, MAXLINE);
     printf("%s\n", buffer);
     send(new_socket, helloTCP, strlen(helloTCP), 0);
     printf("Hello message sent\n");
@@ -647,7 +647,7 @@ tundesc = tun_open(&tun[0]);
       klice klienta a posle klientovi
 
 */
-    valread = read(new_socket, buffer, MAXLINE);
+    read(new_socket, buffer, MAXLINE);
     auto skdf = kyber512_kem::encapsulate(prng, (const unsigned char*)buffer, cipher);
     uint8_t* shrd_key = static_cast<uint8_t*>(std::malloc(32));
     skdf.read(shrd_key, 32);
