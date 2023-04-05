@@ -228,9 +228,9 @@ return true;
 try{
 text = Desifrovani(key, sifrtext);
 }
-    catch( CryptoPP::HashVerificationFilter::HashVerificationFailed& e )
+    catch(...)
     {
-	return true;
+	return false;
     }
 
 ZapisdoTUN(tundesc, text);
