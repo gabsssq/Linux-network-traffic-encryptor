@@ -735,7 +735,7 @@ pid_t frk = fork();
 signal(SIGINT, inthand);
 
 // Promenna pro kontrolu stavu TCP spoje
-int status
+int status;
 while (!stop){
 
 /*
