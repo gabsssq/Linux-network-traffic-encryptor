@@ -74,7 +74,7 @@ string convertToString(char* a)
 }
 
 // Ziskani file descriptoru pro cteni a zapis do virtualniho rozhrani
-int tun_open(char *devname)
+int tun_open()
 {
   struct ifreq ifr;
   int fd, err;
@@ -84,7 +84,7 @@ int tun_open(char *devname)
   }
   memset(&ifr, 0, sizeof(ifr));
   ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-  strncpy(ifr.ifr_name, devname, IFNAMSIZ);
+  strncpy(ifr.ifr_name, "tun0", IFNAMSIZ);
 
   if ( (err = ioctl(fd, TUNSETIFF, (void *) &ifr)) == -1 ) {
     perror("ioctl TUNSETIFF");close(fd);exit(1);
