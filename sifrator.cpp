@@ -1,5 +1,6 @@
 #include "kyber512_kem.hpp"
 #include <thread>
+#include <ctime>
 #include <signal.h>
 #include <fstream>
 #include <sstream>
@@ -259,16 +260,6 @@ Posilani (sockfd, servaddr, sifrtext, len);
 return false;
 }
 
-// Funkce pro udrzeni dynamickeho NATu zaznamu
-void KeepAlive(int TCPsocket, int UDPsocket, struct sockaddr_in cliaddr, socklen_t len){
-const char* keepalive = "Keep Alive";
-while(!stop){
-sleep(1);
-send(TCPsocket, keepalive, strlen(keepalive), 0);
-sendto(UDPsocket, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
-}
-}
-
 
 /*
    Vymena klice v rezimu serveru
@@ -351,65 +342,35 @@ send(client_fd, bufferTCP.str().c_str(), bufferTCP.str().length(), 0);
 return key;
 }
 
-
-
+// Vypis pouziti programu
+void help(){
+cout << endl << "   Pouziti:" << endl << endl;
+cout << "   ./sifrator [Rezim] [QKD IP] [server IP]" << endl;
+cout << "   Rezim - server nebo klient" << endl;
+cout << "   Server IP - pouze v rezimu klient" << endl << endl;
+}
 
 int main(int argc, char* argv[])
 {
 
 
 if (argc == 1){
-cout << endl << "   Pouziti:" << endl << endl;
-cout << "   ./sifrator [Rezim] [QKD IP] [server IP]" << endl;
-cout << "   Rezim - server nebo klient" << endl;
-cout << "   Server IP - pouze v rezimu klient" << endl << endl;
+help();
 return 0;
 }
 
-/*
-   osetreni chybneho poctu argumentu:
-   rezim server - 2 argumenty
-   rezim klient - 3 argumenty
-*/
-
-
-bool cli_srv;
 // Prvni argument je rezim operace
 string mod = argv[1];
 
-
-if (mod == "klient"){
-cli_srv = true;
-}
-
-else if (mod == "server"){
-cli_srv = false;
-}
-
-else {
-cout << "Chybny mod operace" << endl;
-return 0;
-}
-
-if (argc < 3 || (argc < 4 && mod == "klient")){
-cout << "Poskytnut nedostatek argumentu" << endl;
-return 0;
-}
 
 // Druhy argument je IP QKD serveru
 string qkd_ip = argv[2];
 
 
-if (argc > 4 || (argc > 3 && mod == "server")){
-cout << "Prilis mnoho argumentu" << endl;
-return 0;
-}
-
-
 //******** MOD KLIENTA: ********//
 
 
-if (cli_srv){
+if (mod=="klient"){
 
 // Treti argument je IP serveru
 const char* srv_ip = argv[3];
@@ -579,7 +540,7 @@ return 0;
 
 //******** MOD SERVERU: ********//
 
-else if (!cli_srv){
+else if (mod=="server"){
 
     uint8_t cipher[kyber512_kem::cipher_text_len()];
     prng::prng_t prng;
@@ -695,10 +656,6 @@ const char *hello = "Hello from server";
 
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
 	
-// Vlakno pro dynamicky NAT
-std::thread t1(KeepAlive, new_socket, sockfd, cliaddr, len);
-t1.detach();
-	
 	
 char bufferTCP[MAXLINE] = { 0 };
 std::ofstream myfile;
@@ -733,6 +690,10 @@ signal(SIGINT, inthand);
 
 // Promenna pro kontrolu stavu TCP spoje
 int status;
+// Zprava pro udrzeni dynamickeho NAT prekladu
+const char* keepalive = "Keep Alive";
+// Referencni cas pro udrzeni dynamickeho NATU
+time_t ref = time(NULL);
 while (!stop){
 
 /*
@@ -775,8 +736,13 @@ while(! D_E_C_R (sockfd, servaddr, key, tundesc)){
 }
 
 usleep(100);
+if (time(NULL)-ref>=1){
+// Obnoveni dynamickeho prekladu provozem ze serveru
+send(new_socket, keepalive, strlen(keepalive), 0);
+sendto(serverfd, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+ref = time(NULL);
 }
-
+}
 // Cisteni po ukonceni while smycky
 kill(frk, SIGTERM);
 close(sockfd);
@@ -786,5 +752,8 @@ close(tundesc);
 return 0;
 }
 
+else {
+help();
 return 0;
+}
 }
