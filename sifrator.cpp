@@ -739,7 +739,7 @@ usleep(100);
 if (time(NULL)-ref>=1){
 // Obnoveni dynamickeho prekladu provozem ze serveru
 send(new_socket, keepalive, strlen(keepalive), 0);
-sendto(serverfd, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
+sendto(sockfd, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
 ref = time(NULL);
 }
 }
