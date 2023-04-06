@@ -301,7 +301,7 @@ return key;
 void help(){
 cout << endl << "   Pouziti:" << endl << endl;
 cout << "   ./sifrator_server [QKD IP]" << endl;
-cout << "   QKD IP - ip adresa dosazitelneho QKD serveru" << endl;
+cout << "   QKD IP - IP adresa dosazitelneho QKD serveru" << endl;
 }
 
 int main(int argc, char* argv[])
