@@ -42,4 +42,3 @@ systemctl enable xtumapENC.service
 systemctl enable xtumapDEC.service
 systemctl start xtumapENC.service
 systemctl start xtumapDEC.service
-
