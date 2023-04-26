@@ -6,7 +6,7 @@ CurrDIR=$(pwd)
 cat apt-req.txt | xargs apt install -y
 pip install -r requirements.txt
 
-echo "mujPr	150" >> /etc/protocols
+echo "mujPr 150" >> /etc/protocols
 
 iptables -I FORWARD -i $1 -j NFQUEUE --queue-num 1
 iptables -I FORWARD -i $2 -j NFQUEUE --queue-num 2 -p 150
