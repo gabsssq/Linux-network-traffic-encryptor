@@ -3,34 +3,44 @@ from netfilterqueue import NetfilterQueue as nfq
 from scapy.all import *
 from Cryptodome.Cipher import AES
 
-    # Dešifrovací funkce
-def decrypt(ciphertext, key, mode):
+    # DeÅ¡ifrovacÃ­ funkce
+def decrypt(ciphertext, key, mode, asociated_data):
 	(ciphertext, authTag, nonce) = ciphertext
 	encobj = AES.new(key, AES.MODE_GCM, nonce)
+	encobj.update(asociated_data)
 	return(encobj.decrypt_and_verify(ciphertext, authTag))
 
 def listener(packet):
+	# DeÅ¡ifrovÃ¡nÃ­ paketu a pÅ™idÃ¡nÃ­ originÃ¡lnÃ­ho protokolu
+	try:
+		scapy_packet = IP(packet.get_payload())
+		ip_len = scapy_packet[IP].ihl*4
+		ciphertext = (scapy_packet[Raw].load[32:], scapy_packet[Raw].load[16:32], scapy_packet[Raw].load[:16])
 
-    # Dešifrování paketu a pøidání originálního protokolu
-	scapy_packet = IP(packet.get_payload())
-	ciphertext = (scapy_packet[Raw].load[32:], scapy_packet[Raw].load[16:32], scapy_packet[Raw].load[:16])
-	plaintext = decrypt(ciphertext, key, AES.MODE_GCM)
-	res_packet = IP(packet.get_payload()[:scapy_packet[IP].ihl * 4])
-	res_packet = res_packet/Raw(plaintext[1:])
-	res_packet[IP].proto = plaintext[0]
+		# z hlavicky se do pridanych dat nebere byte 8,10,11 ktere znaci checksum a ttl
+		plaintext = decrypt(ciphertext, key, AES.MODE_GCM, packet.get_payload()[:8]+packet.get_payload()[9:10]+packet.get_payload()[12:ip_len])
+		res_packet = IP(packet.get_payload()[:ip_len])
+		res_packet = res_packet/Raw(plaintext[1:])
 
-    # Pøepoèet kontrolního souètu a délky
-	del res_packet[IP].len
-	del res_packet[IP].chksum
+		res_packet[IP].proto = plaintext[0]
+	    	
+		# PÅ™epoÄet kontrolnÃ­ho souÃ¨tu a dÃ©lky	
+		del res_packet[IP].len
+		del res_packet[IP].chksum
+		
+    		# ZmÄ›na obsahu paketu na Å¡ifrovanÃ½
+		packet.set_payload(bytes(res_packet))
+    		
+		# PÅ™Ã­jem Å¡ifrovanÃ©ho paketu
+		packet.accept()
 
-    # Zmìna obsahu paketu na šifrovanı
-	packet.set_payload(bytes(res_packet))
-    # Pøíjem šifrovaného paketu
-	packet.accept()
+	except:
+		print ("Kontrola GMAC selhala, zahazuji paket...")
+		packet.drop()
 
 key = bytes.fromhex("7092aeb52161089b86c5b5f2824cb529e33764a1294b7ee810b8226fc650e86b")
 
 queue = nfq()
-# Odchyt paketù k dešifrování v 2. frontì pro pakety s vlastním èíslem protokolu
+# Odchyt paketÃ¹ k deÅ¡ifrovÃ¡nÃ­ v 2. frontÃ¬ pro pakety s vlastnÃ­m ÄÃ­slem protokolu
 queue.bind(2, listener)
 queue.run()
