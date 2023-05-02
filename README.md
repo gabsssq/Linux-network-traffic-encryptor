@@ -20,5 +20,5 @@ Klient a server:
 
 Šifrovací brány:
 1) Spustit skript pro instalaci šifrátoru (./install.sh [IP sítě druhé brány])
-2) Spustit šifrátor v režimu server na 1. bráně (./sifrator_server.exe [IP QKD simulatoru - IP Klienta])
-3) Spustit šifrátor v režimu client na 2. bráně (./sifrator_client.exe [IP QKD simulatoru - IP Serveru] [IP druhé šifrovací brány])
+2) Spustit šifrátor v režimu server na 1. bráně (./sifrator_server [IP QKD simulatoru - IP Klienta])
+3) Spustit šifrátor v režimu client na 2. bráně (./sifrator_client [IP QKD simulatoru - IP Serveru] [IP druhé šifrovací brány])
