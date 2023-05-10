@@ -307,7 +307,7 @@ return key;
 // Vypis pouziti programu
 void help(){
 cout << endl << "   Pouziti:" << endl << endl;
-cout << "   ./sifrator_client.exe [QKD IP] [Server IP]" << endl;
+cout << "   ./sifrator_client [QKD IP] [Server IP]" << endl;
 cout << "   QKD IP - IP adresa dosazitelneho QKD serveru" << endl;
 cout << "   Server IP - IP adresa sifratoru v rezimu server" << endl << endl;
 }
