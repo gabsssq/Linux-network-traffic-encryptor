@@ -38,3 +38,5 @@ sudo ip route add $Route_IP via 192.168.1.2
 chmod +x sym-ExpQKD
 g++ -std=c++20 -O3 -pthread -I /usr/local/include/ -I ./kyber/include/ -I ./kyber/subtle/include/ -I ./kyber/sha3/include/ sifrator_server.cpp  /usr/local/lib/libcryptopp.a -o sifrator_server
 g++ -std=c++20 -O3 -pthread -I /usr/local/include/ -I ./kyber/include/ -I ./kyber/subtle/include/ -I ./kyber/sha3/include/ sifrator_client.cpp  /usr/local/lib/libcryptopp.a -o sifrator_client
+touch klic
+touch keyID
