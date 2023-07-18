@@ -37,19 +37,19 @@ chmod +x install_QKD.sh
 ```
 
 ## Usage
-Gateways:
+### Gateways:
 Encryptor is divided into 2 parts - server and client.
-1st Gateway (server):
+##### 1st Gateway (server):
 ```bash
 ./sifrator_server [local IP address of QKD system]
 ```
 
-2nd Gateway (client):
+##### 2nd Gateway (client):
 ```bash
 ./sifrator_client [local IP address of QKD system] [IP address of server gateway]
 ```
 
-Endpoints:
+### Endpoints:
 As a result of packet expansion due to traffic encryption there is high probability, that final packet size will be higher than network MTU.
 Because of this reason must be MTU on endpoints lowered by 60 bytes.
 
@@ -67,13 +67,13 @@ For testing purposes, we created virtual network consisting of 2 gateways and 2 
 Endpoints were used to simulate QKD system and were given 1 thread each. Gateways were given 2 threads each.
 
 ## Performance
-Methodology:
+#### Methodology:
 Goal of the measurement was to find out average transmission speed, using file transfer.
 Selected file sizes were 1 MB, 500 MB, 1 GB, 5 GB. Every file was transfered 15 times.
 Measurement was divided into 3 parts - no encryption, encryption with rekeying, encryption without rekeying.
 
 
-Results:
+#### Results:
 Encryption | 1 MB [mbps] | 500 MB [mbps] | 1 GB [mbps] | 5 GB [mbps]
 --- | --- | --- | --- | ---
 No encryption | 435,4 | 499,8 | 476 | 458,6
