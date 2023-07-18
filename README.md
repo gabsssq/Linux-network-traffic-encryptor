@@ -25,7 +25,7 @@ Installation script install.sh can be used for installation on Debian and Debian
 git clone https://github.com/gabsssq/sifrator.git
 cd sifrator 
 chmod +x install.sh
-./install.sh [IP address of other encryption gateway]
+./install.sh [IP address of other encryption gateway network]
 ```
 
 ## QKD simulator installation
