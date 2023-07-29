@@ -22,7 +22,7 @@ Encryptor performs rekey after 200 000 encrypted messages.
 Installation script install.sh can be used for installation on Debian and Debian-based Linux distributions.
 
 ```bash
-git clone https://github.com/gabsssq/sifrator.git
+git clone https://github.com/gabsssq/Linux-network-traffic-encryptor.git
 cd sifrator 
 chmod +x install.sh
 ./install.sh [IP address of other encryption gateway network]
@@ -30,7 +30,7 @@ chmod +x install.sh
 
 ## QKD simulator installation
 ```bash
-git clone https://github.com/gabsssq/sifrator.git
+git clone https://github.com/gabsssq/Linux-network-traffic-encryptor.git
 cd sifrator 
 chmod +x install_QKD.sh
 ./install_QKD.sh
