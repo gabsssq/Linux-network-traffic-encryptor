@@ -23,7 +23,7 @@ Installation script install.sh can be used for installation on Debian and Debian
 
 ```bash
 git clone https://github.com/gabsssq/Linux-network-traffic-encryptor.git
-cd sifrator 
+cd Linux-network-traffic-encryptor 
 chmod +x install.sh
 ./install.sh [IP address of other encryption gateway network]
 ```
@@ -31,7 +31,7 @@ chmod +x install.sh
 ## QKD simulator installation
 ```bash
 git clone https://github.com/gabsssq/Linux-network-traffic-encryptor.git
-cd sifrator 
+cd Linux-network-traffic-encryptor 
 chmod +x install_QKD.sh
 ./install_QKD.sh
 ```
@@ -41,12 +41,12 @@ chmod +x install_QKD.sh
 Encryptor is divided into 2 parts - server and client.
 ##### 1st Gateway (server):
 ```bash
-./sifrator_server [local IP address of QKD system]
+./encryptor_server [local IP address of QKD system]
 ```
 
 ##### 2nd Gateway (client):
 ```bash
-./sifrator_client [local IP address of QKD system] [IP address of server gateway]
+./encryptor_client [local IP address of QKD system] [IP address of server gateway]
 ```
 
 ### Endpoints:
@@ -62,7 +62,7 @@ MTU value should be typically lowered to 1440 bytes, considering most networks h
 ## Testing
 For testing purposes, we created virtual network consisting of 2 gateways and 2 endpoints using 8 thread processor. Network topology can be seen below.
 
-![alt text](https://github.com/gabsssq/sifrator/blob/main/DP-topologie.drawio.png?raw=true)
+![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/DP-topologie.drawio.png?raw=true)
 
 Endpoints were used to simulate QKD system and were given 1 thread each. Gateways were given 2 threads each.
 
