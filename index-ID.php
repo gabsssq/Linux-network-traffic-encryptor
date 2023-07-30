@@ -33,6 +33,6 @@ switch ($keyID) {
         break;
 
 default:
-echo "ChybneID";
+echo "Missing ID";
 }
 ?>
