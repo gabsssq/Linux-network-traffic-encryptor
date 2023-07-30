@@ -8,7 +8,7 @@ then
 Rep=$(curl http://$KMSM_IP/klic/)
 Key=$(echo $Rep | jq '.keys[0].key' | cut -d '"' -f 2)
 KeyIDSlave=$(echo $Rep | jq '.keys[0].key_ID' | cut -d '"' -f 2)
-echo -n $Key | base64 -d | hexdump -v -e '/1 "%02x" ' > klic
+echo -n $Key | base64 -d | hexdump -v -e '/1 "%02x" ' > key
 echo $KeyIDSlave > keyID
 fi
 
@@ -19,5 +19,5 @@ KeyIDSlave=$(cat keyID)
 Rep=$(curl -X POST -d "keyID=$KeyIDSlave" http://$KMSM_IP/ID/)
 Key=$(echo $Rep | jq '.keys[0].key' | cut -d '"' -f 2)
 KeyIDSlave=$(echo $Rep | jq '.keys[0].key_ID' | cut -d '"' -f 2)
-echo -n $Key | base64 -d | hexdump -v -e '/1 "%02x" ' > klic
+echo -n $Key | base64 -d | hexdump -v -e '/1 "%02x" ' > key
 fi
