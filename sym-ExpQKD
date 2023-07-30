@@ -5,7 +5,7 @@ KMSM_IP=$2
 
 if [ $1 = "client" ]
 then
-Rep=$(curl http://$KMSM_IP/klic/)
+Rep=$(curl http://$KMSM_IP/key/)
 Key=$(echo $Rep | jq '.keys[0].key' | cut -d '"' -f 2)
 KeyIDSlave=$(echo $Rep | jq '.keys[0].key_ID' | cut -d '"' -f 2)
 echo -n $Key | base64 -d | hexdump -v -e '/1 "%02x" ' > key
