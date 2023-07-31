@@ -1,5 +1,0 @@
-iptables
-libnfnetlink-dev
-libnetfilter-queue-dev
-python3-pip
-scapy
