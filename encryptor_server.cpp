@@ -297,8 +297,8 @@ return key;
 // Program usage help
 void help(){
 cout << endl << "   Usage:" << endl << endl;
-cout << "   ./sifrator_server [QKD IP]" << endl;
-cout << "   QKD IP - IP adresa dosazitelneho QKD serveru" << endl;
+cout << "   ./encryptor_server [QKD IP]" << endl;
+cout << "   QKD IP - Local QKD system IP address {x.x.x.x}" << endl;
 }
 
 int main(int argc, char* argv[])
