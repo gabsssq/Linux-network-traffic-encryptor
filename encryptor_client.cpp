@@ -303,9 +303,9 @@ return key;
 // Program usage help
 void help(){
 cout << endl << "   Usage:" << endl << endl;
-cout << "   ./sifrator_client [QKD IP] [Server IP]" << endl;
-cout << "   QKD IP - IP adresa dosazitelneho QKD serveru" << endl;
-cout << "   Server IP - IP adresa sifratoru v rezimu server" << endl << endl;
+cout << "   ./encryptor_client [QKD IP] [Server IP]" << endl;
+cout << "   QKD IP - Local QKD system IP address {x.x.x.x}" << endl;
+cout << "   Server IP - IP address of server gateway {x.x.x.x}" << endl << endl;
 }
 
 int main(int argc, char* argv[])
