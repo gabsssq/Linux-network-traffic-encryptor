@@ -2,8 +2,8 @@
 
 Help()
 {
-   echo "Pouziti: ./install.sh [Sit_druhe_brany]"
-   echo "Tvar site: x.x.x.x/y"
+   echo "Usage: ./install.sh [Other gateway network]"
+   echo "Network format: x.x.x.x/y"
    echo
 }
 
