@@ -6,6 +6,8 @@ This encryptor is meant to be used for creation of encryption gateways.
 
 Usage of encryptor for other than testing purposes is currently highly discouraged.
 
+![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/schema.png?raw=true)
+
 ## Encryption
 Traffic is encrypted on virtual interface using algorithm AES-256 GCM (Used implementation: https://www.cryptopp.com/release870.html).
 Key for AES is derived from QKD and PQC keys.
@@ -13,10 +15,18 @@ Key for AES is derived from QKD and PQC keys.
 QKD key can be obtained from REST API of real QKD system or attached simulator.
 PQC key is established using algorithm Kyber-512 (Used implementation: https://github.com/itzmeanjan/kyber/tree/master).
 
-Encrypted/unencrypted traffic is distinguished by UDP port - encrypted traffic is sent to specific port.
+Encrypted/unencrypted traffic is distinguished by UDP port - encrypted traffic is sent to port 62 000.
 Network traffic is encrypted on packet-by-packet basis in tunnel mode - this means, that every packet is expanded by 60 bytes (16 B nonce, 16 B MAC tag, 20 B new IPv4 address, 8 B UDP header).
 
-Encryptor performs rekey after 200 000 encrypted messages.
+## Encrypted packet structure
+![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/encrpacketstructure.png?raw=true)
+
+## Rekey
+Encryptor performs rekey every 200 000 encrypted messages. Encryptor obtains new QKD key and calculate hybrid key. PQC key stays the same.
+Rekeying process can be seen below:
+![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/rekey.png?raw=true)
+
+Encryptor uses TCP port 61 000 for keyID exchange. Due to key change some packets fail integrity check.
 
 ## Encryptor installation
 Installation script install.sh can be used for installation on Debian and Debian-based Linux distributions.
