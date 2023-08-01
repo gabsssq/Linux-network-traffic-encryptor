@@ -7,6 +7,7 @@ This encryptor is meant to be used for creation of encryption gateways.
 Usage of encryptor for other than testing purposes is currently highly discouraged.
 
 Example application:
+
 ![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/schema.png?raw=true)
 
 ## Encryption
