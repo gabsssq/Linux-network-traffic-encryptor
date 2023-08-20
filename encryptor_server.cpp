@@ -249,11 +249,11 @@ bool E_N_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock key, int tun
 string data = read_tun(tundesc);
 
 if (data.length()==0){
-return true;
+return false;
 }
 string encrypted_data = encrypt_data(key, data);
 send_encrypted (sockfd, servaddr, encrypted_data, len);
-return false;
+return true;
 }
 
 
