@@ -223,18 +223,18 @@ bool D_E_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock key, int tun
 string data;
 string encrypted_data = data_recieve(sockfd, servaddr);
 if (encrypted_data.length() == 0){
-return true;
+return false;
 }
 try{
 data = decrypt_data(key, encrypted_data);
 }
     catch(...)
     {
-	return false;
+	return true;
     }
 
 write_tun(tundesc, data);
-return false;
+return true;
 }
 
 /*
@@ -250,11 +250,11 @@ bool E_N_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock key, int tun
 string data = read_tun(tundesc);
 
 if (data.length()==0){
-return true;
+return false;
 }
 string encrypted_data = encrypt_data(key, data);
 send_encrypted (sockfd, servaddr, encrypted_data, len);
-return false;
+return true;
 }
 
 /*
@@ -464,12 +464,12 @@ while (!stop){
 while (counter<200000 && !stop){
 
 // Data encryption from virtual interface
-while(!E_N_C_R (sockfd, servaddr, key, tundesc, len)){
+while(E_N_C_R (sockfd, servaddr, key, tundesc, len)){
 counter++;
 }
 
 // Data decryption from UDP socket
-while(!D_E_C_R (sockfd, servaddr, key, tundesc)){
+while(D_E_C_R (sockfd, servaddr, key, tundesc)){
 counter++;
 }
 
