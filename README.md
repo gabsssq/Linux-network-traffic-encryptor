@@ -96,4 +96,6 @@ Whole measurement was performed on processor Intel Core i7 1065G7 Ice Lake.
 
 Setup example: 
 
-Uploading gitvid.mov…
+https://github.com/gabsssq/Linux-network-traffic-encryptor/assets/85123006/8101648c-dab6-4712-9bb0-a30a66ef8830
+
+
