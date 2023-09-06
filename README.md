@@ -93,3 +93,5 @@ Rekeying | 162,7 | 142,6 | 140,3 | 140,6
 No rekeying | 162,7 | 144 | 145,3 | 145,8
 
 Whole measurement was performed on processor Intel Core i7 1065G7 Ice Lake.
+
+https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/gitvid.mov
