@@ -23,8 +23,6 @@
 #define MAXLINE 1500
 #define TAG_SIZE 16
 
-//While cycle break
-volatile bool stop = false;
 
 #include <iostream>
 using std::cout;
@@ -62,10 +60,6 @@ using CryptoPP::GCM;
 
 #include "assert.h"
 
-// Threads termination after CTRL+C
-void inthand(int signum) {
-stop = true;
-}
 
 string convertToString(char* a)
 {
@@ -256,6 +250,17 @@ send_encrypted (sockfd, servaddr, encrypted_data, len);
 return true;
 }
 
+// Thread function for both encryption and decryption
+void thread_encrypt (int sockfd, struct sockaddr_in servaddr, struct sockaddr_in cliaddr, SecByteBlock* key_ref, int tundesc, socklen_t len, std::atomic<int>* threads){
+for (int i = 0; i < 100; i++){
+SecByteBlock key = *key_ref;
+while(E_N_C_R (sockfd, cliaddr, key, tundesc, len)){
+}
+while(D_E_C_R (sockfd, servaddr, key, tundesc)){
+}
+}
+*threads += 1;
+}
 
 /*
    Rekeying - client mode
@@ -454,19 +459,20 @@ key = rekey_srv(pqc_key);
 // Set socket to NON-blocking mode
 fcntl(new_socket, F_SETFL, O_NONBLOCK);
 
-// Process fork for more CPUs utilization
-pid_t frk = fork();
-
-// CTRL + C listener for clean program termination
-signal(SIGINT, inthand);
 
 // TCP connection status variable
-int status;
+int status = -1;
 // Message for keeping dynamic NAT translation
 const char* keepalive = "Keep Alive";
 // Reference time for dynamic NAT translation
 time_t ref = time(NULL);
-while (!stop){
+
+// Get count of runnable threads (- main thread)
+int threads_max = std::thread::hardware_concurrency() -1;
+std::atomic<int> threads_available = threads_max;
+
+// Stop program if TCP connection is lost
+while (status != 0){
 
 /*
    Rekeying is initialized when keyID is recieved on TCP socket
@@ -479,13 +485,9 @@ while (!stop){
    Termination and creation of new child process is needed for key synchronization
 */
 
-if (frk > 0){
+// Process fork for more CPUs utilization
 status = read(new_socket, bufferTCP, MAXLINE);
-if (status == 0){
-stop = true;
-}
-else if(status > 0){
-kill(frk, SIGTERM);
+if(status > 0){
 myfile.open ("keyID");
 myfile<< bufferTCP;
 myfile.close();
@@ -493,28 +495,46 @@ myfile.close();
 system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
 
 key = rekey_srv(pqc_key);
-frk = fork();
+}
+
+
+// Create runnable thread if there are data available either on tun interface or UDP socket
+if (E_N_C_R (sockfd, cliaddr, key, tundesc, len) || D_E_C_R (sockfd, servaddr, key, tundesc)) {
+if (threads_available > 0){
+threads_available -=1;
+std::thread (thread_encrypt, sockfd, servaddr, cliaddr, &key, tundesc, len, &threads_available).detach();
 }
 }
 
-// Data encryption from virtual interface
+// Sleep if no data are available
+if (threads_available == threads_max) {
+std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+
+// Help with encryption/decryption if all runnable threads are created
+if (threads_available == 0){
 while(E_N_C_R (sockfd, cliaddr, key, tundesc, len)){
 }
 
-// Data decryption from UDP socket
 while(D_E_C_R (sockfd, servaddr, key, tundesc)){
 }
+}
 
-usleep(100);
-if (time(NULL)-ref>=1){
+
+
+/*
+
+if (time(NULL)-ref>=120){
 // Send "KeepAlive" message for dynamic NAT purposes
 send(new_socket, keepalive, strlen(keepalive), 0);
 sendto(sockfd, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
 ref = time(NULL);
 }
+
+*/
+
 }
 // Clean program termination
-kill(frk, SIGTERM);
 close(sockfd);
 close(new_socket);
 shutdown(server_fd, SHUT_RDWR);

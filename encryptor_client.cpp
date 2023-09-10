@@ -1,6 +1,7 @@
 #include "kyber512_kem.hpp"
 #include <thread>
 #include <ctime>
+#include <chrono>
 #include <signal.h>
 #include <fstream>
 #include <sstream>
@@ -22,9 +23,6 @@
 #define KEYPORT 61000
 #define MAXLINE 1500
 #define TAG_SIZE 16
-
-//While cycle break
-volatile bool stop = false;
 
 #include <iostream>
 using std::cout;
@@ -62,10 +60,6 @@ using CryptoPP::GCM;
 
 #include "assert.h"
 
-// Threads termination after CTRL+C
-void inthand(int signum) {
-stop = true;
-}
 
 string convertToString(char* a)
 {
@@ -257,6 +251,21 @@ send_encrypted (sockfd, servaddr, encrypted_data, len);
 return true;
 }
 
+// Thread function for both encryption and decryption
+void thread_encrypt (int sockfd, struct sockaddr_in servaddr, SecByteBlock* key_ref, int tundesc, socklen_t len, std::atomic<int>* ctr, std::atomic<int>* threads){
+for (int i = 0; i < 100; i++){
+SecByteBlock key = *key_ref;
+while(E_N_C_R (sockfd, servaddr, key, tundesc, len)){
+*ctr += 1;
+}
+
+while(D_E_C_R (sockfd, servaddr, key, tundesc)){
+*ctr += 1;
+}
+}
+*threads += 1;
+}
+
 /*
    Rekeying - client mode
 
@@ -407,7 +416,7 @@ int status, client_fd;
     send(client_fd, pkey.data(), pkey.size(), 0);
     read(client_fd, buffer, MAXLINE);
 
-// decapsulate cipher text and obtain KDF
+// Decapsulate cipher text and obtain KDF
     auto rkdf = kyber512_kem::decapsulate(skey.data(),(const uint8_t*) buffer);
     rkdf.squeeze(shrd_key.data(), KEY_LEN);
     string pqc_key = kyber_utils::to_hex(shrd_key.data(), KEY_LEN);
@@ -450,56 +459,53 @@ fcntl(sockfd, F_SETFL, O_NONBLOCK);
 key = rekey_cli(client_fd, pqc_key, qkd_ip);
 
 // Process fork for more CPUs utilization
-pid_t frk = fork();
 string encoded;
 
+// Get count of runnable threads (- main thread)
+int threads_max = std::thread::hardware_concurrency()-1;
+std::atomic<int> threads_available = threads_max;
+
 // Counter for rekeying purposes
-int counter = 0;
+std::atomic<int> counter = 0;
 
-// CTRL + C listener for clean program termination
-signal(SIGINT, inthand);
+while (1){
 
-while (!stop){
+// Counter value for rekeying signalization
+while (counter<200000){
 
-while (counter<200000 && !stop){
 
-// Data encryption from virtual interface
+// Create runnable thread if there are data available either on tun interface or UDP socket
+if (E_N_C_R (sockfd, servaddr, key, tundesc, len) || D_E_C_R (sockfd, servaddr, key, tundesc)) {
+counter ++;
+if (threads_available > 0){
+threads_available -=1;
+std::thread (thread_encrypt, sockfd, servaddr, &key, tundesc, len, &counter, &threads_available).detach();
+}
+}
+
+// Sleep if no data are available
+if (threads_available == threads_max) {
+std::this_thread::sleep_for(std::chrono::milliseconds(1));
+}
+
+// Help with encryption/decryption if all runnable threads are created
+if (threads_available == 0){
 while(E_N_C_R (sockfd, servaddr, key, tundesc, len)){
 counter++;
 }
 
-// Data decryption from UDP socket
 while(D_E_C_R (sockfd, servaddr, key, tundesc)){
 counter++;
 }
-
-
-usleep(100);
-
 }
 
-/*
-   Rekeing after 200 000 messages
 
-   Parent process tasks:
-
-   1) Set counter to zero
-   2) Terminate child (forked) process
-   3) Get new AES key
-   4) Create new child process
-
-   Termination and creation of new child process is needed for key synchronization
-*/
-if (frk > 0){
-counter = 0;
-kill(frk, SIGTERM);
+}
+// Rekey after counter hits predefined value
 key = rekey_cli(client_fd, pqc_key, qkd_ip);
-frk = fork();
-}
-
+counter = 0;
 }
 // Clean program termination
-kill(frk, SIGTERM);
 close(client_fd);
 close(sockfd);
 close(tundesc);
