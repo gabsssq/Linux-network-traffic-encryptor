@@ -20,7 +20,7 @@ cat requirements.txt | sudo xargs apt install -y
 Route_IP=$1
 
 # Install Kyber library
-git clone https://github.com/itzmeanjan/kyber.git
+git clone https://github.com/gabsssq/kyber.git
 (cd kyber && git submodule update --init)
 
 # Install AES library
