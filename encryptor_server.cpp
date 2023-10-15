@@ -142,21 +142,17 @@ void send_encrypted(int sockfd, struct sockaddr_in servaddr, string cipher, sock
 
 
 // Data encryption
-string encrypt_data(SecByteBlock key, string message){
+string encrypt_data(SecByteBlock* key, string message, AutoSeededRandomPool* prng, GCM<AES,CryptoPP::GCM_64K_Tables>::Encryption* e){
 string cipher;
-AutoSeededRandomPool prng;
 byte iv[ AES::BLOCKSIZE ];
-prng.GenerateBlock( iv, sizeof(iv));
-
-    GCM< AES, CryptoPP::GCM_64K_Tables >::Encryption e;
-    e.SetKeyWithIV( key, key.size(), iv, sizeof(iv) );
-
+(*e).GetNextIV(*prng,iv);
+(*e).SetKeyWithIV(*key, (*key).size(), iv, sizeof(iv));
 
 try
 {
 
     StringSource ss1( message, true,
-        new AuthenticatedEncryptionFilter( e,
+        new AuthenticatedEncryptionFilter( *e,
             new StringSink( cipher ), false, TAG_SIZE
         )
     );
@@ -177,7 +173,7 @@ return encrypted;
 
 
 // Data decryption + integrity check
-string decrypt_data(SecByteBlock key, string cipher){
+string decrypt_data(SecByteBlock* key, string cipher){
 
 string rpdata;
 byte iv[ AES::BLOCKSIZE ];
@@ -185,7 +181,7 @@ memcpy(iv, cipher.data(), sizeof(iv));
 
 
         GCM< AES, CryptoPP::GCM_64K_Tables >::Decryption d;
-        d.SetKeyWithIV( key, sizeof(key), iv, sizeof(iv));
+        d.SetKeyWithIV( *key, sizeof(*key), iv, sizeof(iv));
 
         AuthenticatedDecryptionFilter df( d,
             new StringSink( rpdata ),
@@ -212,7 +208,7 @@ return rpdata;
    Returns false if there are no more data available on socket.
 */
 
-bool D_E_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock key, int tundesc){
+bool D_E_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock* key, int tundesc){
 string data;
 string encrypted_data = data_recieve(sockfd, servaddr);
 if (encrypted_data.length() == 0){
@@ -239,22 +235,21 @@ return true;
    Returns false if there are no more data available on virtual interface.
 */
 
-bool E_N_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock key, int tundesc, socklen_t len){
+bool E_N_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock* key, int tundesc, socklen_t len, AutoSeededRandomPool* prng, GCM<AES,CryptoPP::GCM_64K_Tables>::Encryption e){
 string data = read_tun(tundesc);
 
 if (data.length()==0){
 return false;
 }
-string encrypted_data = encrypt_data(key, data);
+string encrypted_data = encrypt_data(key, data, prng, &e);
 send_encrypted (sockfd, servaddr, encrypted_data, len);
 return true;
 }
 
 // Thread function for both encryption and decryption
-void thread_encrypt (int sockfd, struct sockaddr_in servaddr, struct sockaddr_in cliaddr, SecByteBlock* key_ref, int tundesc, socklen_t len, std::atomic<int>* threads){
+void thread_encrypt (int sockfd, struct sockaddr_in servaddr, struct sockaddr_in cliaddr, SecByteBlock* key, int tundesc, socklen_t len, std::atomic<int>* threads, AutoSeededRandomPool* prng, GCM<AES,CryptoPP::GCM_64K_Tables>::Encryption e){
 for (int i = 0; i < 100; i++){
-SecByteBlock key = *key_ref;
-while(E_N_C_R (sockfd, cliaddr, key, tundesc, len)){
+while(E_N_C_R (sockfd, cliaddr, key, tundesc, len, prng, e)){
 }
 while(D_E_C_R (sockfd, servaddr, key, tundesc)){
 }
@@ -299,45 +294,8 @@ for (unsigned int i = 0; i < output.length(); i += 2) {
 return key;
 }
 
-// Program usage help
-void help(){
-cout << endl << "   Usage:" << endl << endl;
-cout << "   ./encryptor_server [QKD IP]" << endl;
-cout << "   QKD IP - Local QKD system IP address {x.x.x.x}" << endl;
-}
-
-int main(int argc, char* argv[])
-{
-
-
-if (argc < 2){
-help();
-return 0;
-}
-
-// First argument - QKD server IP address
-string qkd_ip = argv[1];
-
-
-//******** SERVER MODE: ********//
-
-
-// PQC key establishment parameters and variables
-constexpr size_t KEY_LEN = 32;
-std::vector<uint8_t> cipher(kyber512_kem::CIPHER_LEN, 0);
-std::vector<uint8_t> shrd_key(KEY_LEN, 0);
-std::vector<uint8_t> m(KEY_LEN, 0);
-prng::prng_t prng;
-prng.read(m.data(), m.size());
-
-SecByteBlock key( AES::MAX_KEYLENGTH );
-
-// Virtual interface access
-int tundesc;
-tundesc = tun_open();
-
-
 // TCP socket creation and "Hello" messages exchange
+int tcp_connection(int* pt_server_fd) {
     int server_fd, new_socket;
     struct sockaddr_in address;
     int opt = 1;
@@ -366,10 +324,14 @@ tundesc = tun_open();
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
+
+cout << "Server waiting for TCP connection \n";
+
     if (listen(server_fd, 3) < 0) {
         perror("listen");
         exit(EXIT_FAILURE);
     }
+
     if ((new_socket
          = accept(server_fd, (struct sockaddr*)&address,
                   (socklen_t*)&addrlen))
@@ -377,30 +339,19 @@ tundesc = tun_open();
         perror("accept");
         exit(EXIT_FAILURE);
     }
-    read(new_socket, buffer, MAXLINE);
-    printf("%s\n", buffer);
-    send(new_socket, helloTCP, strlen(helloTCP), 0);
-    printf("Hello message sent\n");
-
-/*
-   PQC key establishment:
-
-   1) Server recieves client public key
-   2) Server generate PQC key
-   3) Server encapsulates PQC key with client's public key and
-      sends to client
-*/
-
-    read(new_socket, buffer, MAXLINE);
-    auto skdf = kyber512_kem::encapsulate(m.data(), (const uint8_t*)buffer, cipher.data());
-    skdf.squeeze(shrd_key.data(), KEY_LEN);
-
-    string pqc_key=kyber_utils::to_hex(shrd_key.data(), 32);
-    send(new_socket, cipher.data(), cipher.size(), 0);
+      read(new_socket, buffer, MAXLINE);
+cout << "Recieved: " << buffer <<"\n";
+      send(new_socket, helloTCP, strlen(helloTCP), 0);
+cout << "TCP connection established \n";
+*pt_server_fd = server_fd;
+return new_socket;
+}
 
 // UDP socket creation and "Hello" messages exchange
+int udp_connection (struct sockaddr_in* pt_servaddr, struct sockaddr_in* pt_cliaddr, socklen_t* pt_len){
 int sockfd;
     struct sockaddr_in servaddr, cliaddr;
+    char buffer[MAXLINE] = { 0 };
 
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
         perror("socket creation failed");
@@ -420,6 +371,7 @@ int sockfd;
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
+    cout << "Server waiting for UDP connection \n";
 
     socklen_t len;
   int n;
@@ -430,48 +382,137 @@ const char *hello = "Hello from server";
                 MSG_WAITALL, ( struct sockaddr *) &cliaddr,
                 &len);
     buffer[n] = '\0';
-    printf("Client : %s\n", buffer);
+    cout << "UDP connection established \n";
     sendto(sockfd, (const char *)hello, strlen(hello),
         MSG_CONFIRM, (const struct sockaddr *) &cliaddr,
             len);
-    std::cout<<"Hello message sent."<<std::endl;
 
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
-	
-	
-char bufferTCP[MAXLINE] = { 0 };
+*pt_servaddr = servaddr;
+*pt_cliaddr = cliaddr;
+*pt_len = len;
+return sockfd;
+}
+
+// PQC key establishment
+string get_pqckey(int new_socket){
+constexpr size_t KEY_LEN = 32;
+std::vector<uint8_t> _cipher(kyber512_kem::CIPHER_LEN, 0);
+std::vector<uint8_t> _shrd_key(KEY_LEN, 0);
+std::vector<uint8_t> _m(KEY_LEN, 0);
+auto m = std::span<uint8_t, KEY_LEN>(_m);
+auto cipher = std::span<uint8_t, kyber512_kem::CIPHER_LEN>(_cipher);
+auto shrd_key = std::span<uint8_t, KEY_LEN>(_shrd_key);
+prng::prng_t prng_pqc;
+prng_pqc.read(m);
+
+/*
+   PQC key establishment:
+
+   1) Server recieves client public key
+   2) Server generate PQC key
+   3) Server encapsulates PQC key with client's public key and sends to client
+*/
+    std::vector<unsigned char> pqc_buffer(MAXLINE);
+    read(new_socket, &pqc_buffer[0], MAXLINE);
+
+    std::vector<uint8_t> _pkey(kyber512_kem::PKEY_LEN, 0);
+    _pkey = pqc_buffer;
+
+    auto pkey = std::span<uint8_t, kyber512_kem::PKEY_LEN>(_pkey);
+    auto skdf = kyber512_kem::encapsulate(m, pkey, cipher);
+    skdf.squeeze(shrd_key);
+
+    string pqc_key=kyber_utils::to_hex(shrd_key);
+    send(new_socket, cipher.data(), cipher.size(), 0);
+return pqc_key;
+}
+
+void get_qkdkey (string qkd_ip, char bufferTCP[MAXLINE]){
+
 std::ofstream myfile;
-
-
-// QKD keyID receive
-read(new_socket, bufferTCP, MAXLINE);
-
 myfile.open ("keyID");
 myfile<< bufferTCP;
 myfile.close();
 
 // Obtain QKD key with keyID
 system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
+}
+
+// Program usage help
+void help(){
+cout << endl << "   Usage:" << endl << endl;
+cout << "   ./encryptor_server [QKD IP]" << endl;
+cout << "   QKD IP - Local QKD system IP address {x.x.x.x}" << endl;
+}
+
+int main(int argc, char* argv[])
+{
+
+
+if (argc < 2){
+help();
+return 0;
+}
+
+// First argument - QKD server IP address
+string qkd_ip = argv[1];
+
+
+//******** SERVER MODE: ********//
+
+// Virtual interface access
+int tundesc;
+tundesc = tun_open();
+
+// TCP connection status variable
+int status = -1;
+
+// Message for keeping dynamic NAT translation
+const char* keepalive = "Keep Alive";
+
+// Reference time for dynamic NAT translation
+time_t ref = time(NULL);
+
+// AES key variable creation
+SecByteBlock key(AES::MAX_KEYLENGTH);
+
+// Variables for UDP/TCP connections
+int server_fd;
+socklen_t len;
+struct sockaddr_in servaddr, cliaddr;
+
+// Get count of runnable threads (excluding main thread)
+int threads_max = std::thread::hardware_concurrency() -1;
+std::atomic<int> threads_available = threads_max;
+
+
+GCM<AES,CryptoPP::GCM_64K_Tables>::Encryption e;
+AutoSeededRandomPool prng;
+
+while(1) {
+// TCP connection create
+int new_socket = tcp_connection(&server_fd);
+
+// Establish PQC key
+string pqc_key = get_pqckey(new_socket);
+
+// UDP connection create
+int sockfd = udp_connection(&servaddr, &cliaddr, &len);
+
+// QKD keyID receive
+char bufferTCP[MAXLINE] = { 0 };
+read(new_socket, bufferTCP, MAXLINE);
+get_qkdkey(qkd_ip, bufferTCP);
 
 // Combine PQC a QKD key into hybrid key for AES
 key = rekey_srv(pqc_key);
 
-// Set socket to NON-blocking mode
+// Set TCP socket to NON-blocking mode
 fcntl(new_socket, F_SETFL, O_NONBLOCK);
+status = -1;
 
-
-// TCP connection status variable
-int status = -1;
-// Message for keeping dynamic NAT translation
-const char* keepalive = "Keep Alive";
-// Reference time for dynamic NAT translation
-time_t ref = time(NULL);
-
-// Get count of runnable threads (- main thread)
-int threads_max = std::thread::hardware_concurrency() -1;
-std::atomic<int> threads_available = threads_max;
-
-// Stop program if TCP connection is lost
+// Return to "waiting on TCP connection" state if TCP connection seems dead
 while (status != 0){
 
 /*
@@ -485,24 +526,20 @@ while (status != 0){
    Termination and creation of new child process is needed for key synchronization
 */
 
-// Process fork for more CPUs utilization
+// Get TCP connection status
 status = read(new_socket, bufferTCP, MAXLINE);
+// Establish new hybrid key, if key_ID is recieved
 if(status > 0){
-myfile.open ("keyID");
-myfile<< bufferTCP;
-myfile.close();
-
-system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
-
+get_qkdkey(qkd_ip, bufferTCP);
 key = rekey_srv(pqc_key);
 }
 
 
 // Create runnable thread if there are data available either on tun interface or UDP socket
-if (E_N_C_R (sockfd, cliaddr, key, tundesc, len) || D_E_C_R (sockfd, servaddr, key, tundesc)) {
+if (E_N_C_R (sockfd, cliaddr, &key, tundesc, len, &prng, e) || D_E_C_R (sockfd, servaddr, &key, tundesc)) {
 if (threads_available > 0){
 threads_available -=1;
-std::thread (thread_encrypt, sockfd, servaddr, cliaddr, &key, tundesc, len, &threads_available).detach();
+std::thread (thread_encrypt, sockfd, servaddr, cliaddr, &key, tundesc, len, &threads_available, &prng, e).detach();
 }
 }
 
@@ -513,31 +550,24 @@ std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
 // Help with encryption/decryption if all runnable threads are created
 if (threads_available == 0){
-while(E_N_C_R (sockfd, cliaddr, key, tundesc, len)){
+while(E_N_C_R (sockfd, cliaddr, &key, tundesc, len, &prng, e)){
 }
 
-while(D_E_C_R (sockfd, servaddr, key, tundesc)){
+while(D_E_C_R (sockfd, servaddr, &key, tundesc)){
 }
 }
 
-
-
-/*
-
-if (time(NULL)-ref>=120){
-// Send "KeepAlive" message for dynamic NAT purposes
-send(new_socket, keepalive, strlen(keepalive), 0);
+// Send "KeepAlive" message via UDP every 60s to keep dynamic NAT translation - no need to encrypt
+if (time(NULL)-ref>=60){
 sendto(sockfd, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, len);
 ref = time(NULL);
 }
 
-*/
 
 }
-// Clean program termination
+// Clean sockets termination
 close(sockfd);
 close(new_socket);
 shutdown(server_fd, SHUT_RDWR);
-close(tundesc);
-return 0;
+}
 }
