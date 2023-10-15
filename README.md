@@ -8,7 +8,7 @@ Usage of encryptor for other than testing purposes is currently highly discourag
 
 Example application:
 
-![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/schema.png?raw=true)
+![schema](https://github.com/gabsssq/Linux-network-traffic-encryptor/assets/85123006/f8c1ad3a-0396-4b6b-bf97-12bd5adbb919)
 
 ## Encryption
 Traffic is encrypted on virtual interface using algorithm AES-256 GCM (Used implementation: https://www.cryptopp.com/release870.html).
@@ -21,12 +21,12 @@ Encrypted/unencrypted traffic is distinguished by UDP port - encrypted traffic i
 Network traffic is encrypted on packet-by-packet basis in tunnel mode - this means, that every packet is expanded by 60 bytes (16 B nonce, 16 B MAC tag, 20 B new IPv4 address, 8 B UDP header).
 
 ## Encrypted packet structure
-![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/encrpacketstructure.png?raw=true)
+![encrpacketstructure](https://github.com/gabsssq/Linux-network-traffic-encryptor/assets/85123006/90284fa1-a6f5-4fd8-8721-23079a0f3c03)
 
 ## Rekey
 Encryptor performs rekey every 200 000 encrypted messages. Encryptor obtains new QKD key and calculate hybrid key. PQC key stays the same.
 Rekeying process can be seen below:
-![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/rekey.png?raw=true)
+![rekey](https://github.com/gabsssq/Linux-network-traffic-encryptor/assets/85123006/9e6fb0b2-9698-41ab-8a97-90681583875b)
 
 Encryptor uses TCP port 61 000 for keyID exchange. Due to key change some packets fail integrity check.
 
@@ -74,7 +74,7 @@ MTU value should be typically lowered to 1440 bytes, considering most networks h
 ## Testing
 For testing purposes, we created virtual network consisting of 2 gateways and 2 endpoints using 8 thread processor. Network topology can be seen below.
 
-![alt text](https://github.com/gabsssq/Linux-network-traffic-encryptor/blob/main/DP-topologie.drawio.png?raw=true)
+![DP-topologie drawio](https://github.com/gabsssq/Linux-network-traffic-encryptor/assets/85123006/397e2725-3582-4843-90b2-57dc2c2b38fa)
 
 Endpoints were used to simulate QKD system and were given 1 thread each. Gateways were given 2 threads each.
 
