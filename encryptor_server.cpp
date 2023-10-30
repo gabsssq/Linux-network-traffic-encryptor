@@ -518,7 +518,7 @@ void PerformECDHKeyExchange(int socket)
     dh.Agree(sharedSecret, privateKey, receivedKey);
 
     // Convert shared secret to string and print or use it
-    std::string sharedSecretStr;
+    string sharedSecretStr;
     CryptoPP::StringSink stringSink(sharedSecretStr);
 
     std::cout << "Shared Secret: " << sharedSecretStr << std::endl;
@@ -583,6 +583,9 @@ int main(int argc, char *argv[])
 
         // Close the socket
         close(client_fd);
+        shutdown(server_fd, SHUT_RDWR);
+
+        
         // TCP connection create
         int new_socket = tcp_connection(&server_fd);
 
