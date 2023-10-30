@@ -568,6 +568,21 @@ int main(int argc, char *argv[])
 
     while (1)
     {
+
+        // Create TCP connection
+        int ecdh_fd;
+        int client_fd = tcp_connection(&ecdh_fd);
+        // TCP error propagation
+        if (client_fd == -1)
+        {
+            return -1;
+        }
+
+        // Perform ECDH key exchange
+        PerformECDHKeyExchange(client_fd);
+
+        // Close the socket
+        close(client_fd);
         // TCP connection create
         int new_socket = tcp_connection(&server_fd);
 
@@ -616,20 +631,7 @@ int main(int argc, char *argv[])
             return 1;
         }
         */
-        // Create TCP connection
-        int ecdh_fd;
-        int client_fd = tcp_connection(&ecdh_fd);
-        // TCP error propagation
-        if (client_fd == -1)
-        {
-            return -1;
-        }
-
-        // Perform ECDH key exchange
-        PerformECDHKeyExchange(client_fd);
-
-        // Close the socket
-        close(client_fd);
+        
 
         // Combine PQC a QKD key into hybrid key for AES
         key = rekey_srv(pqc_key);
