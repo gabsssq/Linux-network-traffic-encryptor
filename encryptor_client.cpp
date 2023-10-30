@@ -610,7 +610,8 @@ int main(int argc, char *argv[])
     }
     */
     // Create TCP connection
-    int client_fd = tcp_connection(serverAddress);
+    
+    int client_fd = tcp_connection(srv_ip);
     // TCP error propagation
     if (client_fd == -1)
     {
