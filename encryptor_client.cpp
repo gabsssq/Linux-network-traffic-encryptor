@@ -529,11 +529,14 @@ void PerformECDHKeyExchange(int socket)
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
 
-    // Convert shared secret to string and print or use it
-    string sharedSecretStr;
-    CryptoPP::StringSink stringSink(sharedSecretStr);
+   string hex;
+    {
+        CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);
+        hexEncoder.Put(sharedSecret, sharedSecret.size());
+        hexEncoder.MessageEnd();
+    }
 
-    std::cout << "Shared Secret: " << sharedSecretStr << std::endl;
+    std::cout << "Hexadecimal representation: " << hex << std::endl;
 }
 
 int main(int argc, char *argv[])
