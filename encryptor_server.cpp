@@ -592,7 +592,7 @@ int main(int argc, char *argv[])
 
         // Server connection details
         string serverAddress = "10.0.2.8";
-        unsigned short serverPort = 9000;
+        unsigned short serverPort = 12345;
 
         // Create a socket
         int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
