@@ -513,7 +513,6 @@ void PerformECDHKeyExchange(int socket)
     // Send public key to the server
     send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
 
-
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     dh.Agree(sharedSecret, privateKey, receivedKey);
@@ -521,7 +520,6 @@ void PerformECDHKeyExchange(int socket)
     // Convert shared secret to string and print or use it
     std::string sharedSecretStr;
     CryptoPP::StringSink stringSink(sharedSecretStr);
-    
 
     std::cout << "Shared Secret: " << sharedSecretStr << std::endl;
 }
@@ -584,8 +582,6 @@ int main(int argc, char *argv[])
         read(new_socket, bufferTCP, MAXLINE);
         get_qkdkey(qkd_ip, bufferTCP);
 
-        
-
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
         // Server connection details
@@ -593,42 +589,41 @@ int main(int argc, char *argv[])
         // Server connection details
         string serverAddress = "10.0.2.8";
         unsigned short serverPort = 50000;
-         /*
-    // Create a socket
-    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (clientSocket == -1)
-    {
-        perror("Error creating socket");
-        return 1;
-    }
-    */
-    /*
-    // Set up the server address
-    sockaddr_in serverAddr;
-    std::cout << "Connecting to " << serverAddress << ":" << serverPort << std::endl;
-    serverAddr.sin_family = AF_INET;
-    std::cout << serverAddr.sin_family << std::endl;
-    serverAddr.sin_port = htons(serverPort);
-    std::cout << serverAddr.sin_port << std::endl;
-    inet_pton(AF_INET, serverAddress.c_str(), &(serverAddr.sin_addr));
+        /*
+   // Create a socket
+   int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+   if (clientSocket == -1)
+   {
+       perror("Error creating socket");
+       return 1;
+   }
+   */
+        /*
+        // Set up the server address
+        sockaddr_in serverAddr;
+        std::cout << "Connecting to " << serverAddress << ":" << serverPort << std::endl;
+        serverAddr.sin_family = AF_INET;
+        std::cout << serverAddr.sin_family << std::endl;
+        serverAddr.sin_port = htons(serverPort);
+        std::cout << serverAddr.sin_port << std::endl;
+        inet_pton(AF_INET, serverAddress.c_str(), &(serverAddr.sin_addr));
 
-    // Connect to the server
-    if (connect(clientSocket, reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr)) == -1)
-    {
-        perror("Error to server");
-        close(clientSocket);
-        return 1;
-    }
-    */
-    // Create TCP connection
-    int client_fd = tcp_connection(serverAddress);
-    // TCP error propagation
-    if (client_fd == -1)
-    {
-        return -1;
-    }
-
-        
+        // Connect to the server
+        if (connect(clientSocket, reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr)) == -1)
+        {
+            perror("Error to server");
+            close(clientSocket);
+            return 1;
+        }
+        */
+        // Create TCP connection
+        int ecdh_fd;
+        int client_fd = tcp_connection(&ecdh_fd);
+        // TCP error propagation
+        if (client_fd == -1)
+        {
+            return -1;
+        }
 
         // Perform ECDH key exchange
         PerformECDHKeyExchange(client_fd);
