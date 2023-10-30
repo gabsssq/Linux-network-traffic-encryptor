@@ -515,7 +515,7 @@ void PerformECDHKeyExchange(int socket)
 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
-    dh.Agree(sharedSecret, privateKey, receivedKey);
+    std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
 
     // Convert shared secret to string and print or use it
     string sharedSecretStr;
