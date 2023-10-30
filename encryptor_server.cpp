@@ -593,35 +593,48 @@ int main(int argc, char *argv[])
         // Server connection details
         string serverAddress = "10.0.2.8";
         unsigned short serverPort = 50000;
-        // Create a socket
-        int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (clientSocket == -1)
-        {
-            perror("Error creating socket");
-            return 1;
-        }
+         /*
+    // Create a socket
+    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clientSocket == -1)
+    {
+        perror("Error creating socket");
+        return 1;
+    }
+    */
+    /*
+    // Set up the server address
+    sockaddr_in serverAddr;
+    std::cout << "Connecting to " << serverAddress << ":" << serverPort << std::endl;
+    serverAddr.sin_family = AF_INET;
+    std::cout << serverAddr.sin_family << std::endl;
+    serverAddr.sin_port = htons(serverPort);
+    std::cout << serverAddr.sin_port << std::endl;
+    inet_pton(AF_INET, serverAddress.c_str(), &(serverAddr.sin_addr));
 
-        // Set up the server address
-        sockaddr_in serverAddr;
-        serverAddr.sin_family = AF_INET;
-        serverAddr.sin_port = htons(serverPort);
-        inet_pton(AF_INET, serverAddress.c_str(), &(serverAddr.sin_addr));
-
-        // Connect to the server
-        if (connect(clientSocket, reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr)) == -1)
-        {
-            perror("Error connecting to server");
-            close(clientSocket);
-            return 1;
-        }
+    // Connect to the server
+    if (connect(clientSocket, reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr)) == -1)
+    {
+        perror("Error to server");
+        close(clientSocket);
+        return 1;
+    }
+    */
+    // Create TCP connection
+    int client_fd = tcp_connection(serverAddress);
+    // TCP error propagation
+    if (client_fd == -1)
+    {
+        return -1;
+    }
 
         
 
         // Perform ECDH key exchange
-        PerformECDHKeyExchange(clientSocket);
+        PerformECDHKeyExchange(client_fd);
 
         // Close the socket
-        close(clientSocket);
+        close(client_fd);
 
         // Combine PQC a QKD key into hybrid key for AES
         key = rekey_srv(pqc_key);
