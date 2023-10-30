@@ -573,7 +573,7 @@ time_t ref = time(NULL);
 //ECDH key exchange
  // Server connection details
         string serverAddress = "10.0.2.7";
-        unsigned short serverPort = 12345;
+        unsigned short serverPort = 50000;
 
         // Create a socket
         int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
