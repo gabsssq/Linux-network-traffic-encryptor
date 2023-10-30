@@ -1,4 +1,4 @@
-#include "kyber512_kem.hpp"
+#include <kyber512_kem.hpp>
 #include <thread>
 #include <ctime>
 #include <chrono>
@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <cryptopp/dh.h>
 #define PORT 62000
 #define KEYPORT 61000
 #define MAXLINE 1500
@@ -31,6 +32,30 @@ using std::endl;
 
 #include <string>
 using std::string;
+
+#include "cryptopp/hex.h"
+using CryptoPP::HexDecoder;
+using CryptoPP::HexEncoder;
+
+#include "cryptopp/osrng.h"
+using CryptoPP::AutoSeededRandomPool;
+
+#include "cryptopp/eccrypto.h"
+using CryptoPP::ECDH;
+using CryptoPP::ECP;
+
+#include "cryptopp/secblock.h"
+using CryptoPP::SecByteBlock;
+
+#include "cryptopp/oids.h"
+using CryptoPP::OID;
+
+// ASN1 is a namespace, not an object
+#include "cryptopp/asn.h"
+using namespace CryptoPP::ASN1;
+
+#include "cryptopp/integer.h"
+using CryptoPP::Integer;
 
 #include "cryptopp/hex.h"
 using CryptoPP::HexEncoder;
@@ -59,6 +84,8 @@ using CryptoPP::AES;
 using CryptoPP::GCM;
 
 #include "assert.h"
+
+
 
 
 string convertToString(char* a)
@@ -159,9 +186,9 @@ try
     );
 
 }
-catch( CryptoPP::Exception& e )
+catch( CryptoPP::Exception& ex )
 {
-    cerr << e.what() << endl;
+    cerr << ex.what() << endl;
    exit(1);
 }
 
@@ -465,8 +492,41 @@ cout << "   QKD IP - Local QKD system IP address {x.x.x.x}" << endl;
 cout << "   Server IP - IP address of server gateway {x.x.x.x}" << endl << endl;
 }
 
+void PerformECDHKeyExchange(int socket)
+{
+    
+    CryptoPP::AutoSeededRandomPool rng;
+
+    // Set up the NIST P-521 curve domain
+    CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
+
+    // Generate ECDH keys
+    CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
+    CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
+    dh.GenerateKeyPair(rng, privateKey, publicKey);
+
+    // Send public key to the server
+    send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
+
+    // Receive the server's public key
+    CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
+    recv(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes(), 0);
+
+    // Derive shared secret
+    CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
+    dh.Agree(sharedSecret, privateKey, receivedKey);
+
+    // Convert shared secret to string and print or use it
+    string sharedSecretStr;
+    CryptoPP::StringSink stringSink(sharedSecretStr);
+    
+
+    std::cout << "Shared Secret: " << sharedSecretStr << std::endl;
+}
+
 int main(int argc, char* argv[])
 {
+
 
 if (argc < 3){
 help();
@@ -508,6 +568,43 @@ char bufferTCP[MAXLINE] = { 0 };
 
 // Time reference variable for rekey purposes
 time_t ref = time(NULL);
+
+    
+//ECDH key exchange
+ // Server connection details
+        string serverAddress = "10.0.2.7";
+        unsigned short serverPort = 9000;
+
+        // Create a socket
+        int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
+        if (clientSocket == -1)
+        {
+            perror("Error creating socket");
+            return 1;
+        }
+
+        // Set up the server address
+        sockaddr_in serverAddr;
+        std::cout << "Connecting to " << serverAddress << ":" << serverPort << std::endl;
+        serverAddr.sin_family = AF_INET;
+        std::cout << serverAddr.sin_family << std::endl;
+        serverAddr.sin_port = htons(serverPort);
+        std::cout << serverAddr.sin_port << std::endl;
+        inet_pton(AF_INET, serverAddress.c_str(), &(serverAddr.sin_addr));
+
+        // Connect to the server
+        if (connect(clientSocket, reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr)) == -1)
+        {
+            perror("Error to server");
+            close(clientSocket);
+            return 1;
+        }
+
+        // Perform ECDH key exchange
+        PerformECDHKeyExchange(clientSocket);
+
+        // Close the socket
+        close(clientSocket);
 
 while (1){
 int status = -1;
