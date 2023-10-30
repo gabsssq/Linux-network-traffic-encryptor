@@ -507,12 +507,12 @@ void PerformECDHKeyExchange(int socket)
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
+    // Receive the server's public key
+    CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
+    read(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // Send public key to the server
     send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
 
-    // Receive the server's public key
-    CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    recv(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes(), 0);
 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
