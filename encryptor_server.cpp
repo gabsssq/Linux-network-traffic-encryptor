@@ -511,8 +511,6 @@ void PerformECDHKeyExchange(int socket)
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    std::cout << "Received key: " << std::endl;
-    std::cout << receivedKey.BytePtr() << std::endl;
     // Send public key to the server
     send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
 
@@ -520,16 +518,12 @@ void PerformECDHKeyExchange(int socket)
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     dh.Agree(sharedSecret, privateKey, receivedKey);
 
-   string hex;
-    {
-        CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);
-        hexEncoder.Put(sharedSecret, sharedSecret.size());
-        hexEncoder.MessageEnd();
-    }
+    string hex;
+    CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);
+    hexEncoder.Put(sharedSecret, sharedSecret.size());
+    hexEncoder.MessageEnd();
 
     std::cout << "Hexadecimal representation: " << hex << std::endl;
-
-    
 }
 
 int main(int argc, char *argv[])
@@ -574,11 +568,13 @@ int main(int argc, char *argv[])
     GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e;
     AutoSeededRandomPool prng;
 
+    // Create TCP connection for ECDH key exchange
+    int ecdh_fd;
+
     while (1)
     {
 
-        // Create TCP connection
-        int ecdh_fd;
+        
         int client_fd = tcp_connection(&ecdh_fd);
         // TCP error propagation
         if (client_fd == -1)
@@ -593,7 +589,6 @@ int main(int argc, char *argv[])
         close(client_fd);
         shutdown(server_fd, SHUT_RDWR);
 
-        
         // TCP connection create
         int new_socket = tcp_connection(&server_fd);
 
@@ -611,8 +606,6 @@ int main(int argc, char *argv[])
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
         // Server connection details
-
-        
 
         // Combine PQC a QKD key into hybrid key for AES
         key = rekey_srv(pqc_key);

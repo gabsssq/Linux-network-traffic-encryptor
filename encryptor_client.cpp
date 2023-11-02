@@ -529,12 +529,10 @@ void PerformECDHKeyExchange(int socket)
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
 
-   string hex;
-    {
-        CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);
-        hexEncoder.Put(sharedSecret, sharedSecret.size());
-        hexEncoder.MessageEnd();
-    }
+    string hex;
+    CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);
+    hexEncoder.Put(sharedSecret, sharedSecret.size());
+    hexEncoder.MessageEnd();
 
     std::cout << "Hexadecimal representation: " << hex << std::endl;
 }
@@ -547,7 +545,6 @@ int main(int argc, char *argv[])
         help();
         return 0;
     }
-
 
     // First argument - IP of gateway in server mode
     const char *srv_ip = argv[1];
@@ -583,7 +580,7 @@ int main(int argc, char *argv[])
 
     // ECDH key exchange
     // Create TCP connection
-    
+
     int client_fd = tcp_connection(srv_ip);
     // TCP error propagation
     if (client_fd == -1)
