@@ -491,7 +491,8 @@ void help()
          << "   Usage:" << endl
          << endl;
     cout << "   ./encryptor_server [QKD IP]" << endl;
-    cout << "   QKD IP - Local QKD system IP address {x.x.x.x}" << endl;
+    cout << "   QKD IP - Local QKD system IP address {x.x.x.x} (optional)" << endl
+         << endl;
 }
 
 // ECDH key exchange
@@ -611,36 +612,6 @@ int main(int argc, char *argv[])
         // Send the public key to the other party
         // Server connection details
 
-        // Server connection details
-        string serverAddress = "10.0.2.8";
-        unsigned short serverPort = 50000;
-        /*
-   // Create a socket
-   int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-   if (clientSocket == -1)
-   {
-       perror("Error creating socket");
-       return 1;
-   }
-   */
-        /*
-        // Set up the server address
-        sockaddr_in serverAddr;
-        std::cout << "Connecting to " << serverAddress << ":" << serverPort << std::endl;
-        serverAddr.sin_family = AF_INET;
-        std::cout << serverAddr.sin_family << std::endl;
-        serverAddr.sin_port = htons(serverPort);
-        std::cout << serverAddr.sin_port << std::endl;
-        inet_pton(AF_INET, serverAddress.c_str(), &(serverAddr.sin_addr));
-
-        // Connect to the server
-        if (connect(clientSocket, reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr)) == -1)
-        {
-            perror("Error to server");
-            close(clientSocket);
-            return 1;
-        }
-        */
         
 
         // Combine PQC a QKD key into hybrid key for AES

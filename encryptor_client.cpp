@@ -499,9 +499,9 @@ void help()
     cout << endl
          << "   Usage:" << endl
          << endl;
-    cout << "   ./encryptor_client [QKD IP] [Server IP]" << endl;
-    cout << "   QKD IP - Local QKD system IP address {x.x.x.x}" << endl;
-    cout << "   Server IP - IP address of server gateway {x.x.x.x}" << endl
+    cout << "   ./encryptor_client  [Server IP] [QKD IP]" << endl;
+    cout << "   Server IP - IP address of server gateway {x.x.x.x}" << endl;
+    cout << "   QKD IP - Local QKD system IP address {x.x.x.x} (optional)" << endl
          << endl;
 }
 
@@ -548,11 +548,12 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-    // First argument - QKD server IP address
-    string qkd_ip = argv[1];
 
-    // Second argument - IP of gateway in server mode
-    const char *srv_ip = argv[2];
+    // First argument - IP of gateway in server mode
+    const char *srv_ip = argv[1];
+
+    // Second argument - QKD server IP address (optional)
+    string qkd_ip = argv[2];
 
     //******** CLIENT MODE: ********//
 
@@ -581,37 +582,6 @@ int main(int argc, char *argv[])
     time_t ref = time(NULL);
 
     // ECDH key exchange
-    //  Server connection details
-    string serverAddress = "10.0.2.7";
-    unsigned short serverPort = 50000;
-
-    /*
-    // Create a socket
-    int clientSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (clientSocket == -1)
-    {
-        perror("Error creating socket");
-        return 1;
-    }
-    */
-    /*
-    // Set up the server address
-    sockaddr_in serverAddr;
-    std::cout << "Connecting to " << serverAddress << ":" << serverPort << std::endl;
-    serverAddr.sin_family = AF_INET;
-    std::cout << serverAddr.sin_family << std::endl;
-    serverAddr.sin_port = htons(serverPort);
-    std::cout << serverAddr.sin_port << std::endl;
-    inet_pton(AF_INET, serverAddress.c_str(), &(serverAddr.sin_addr));
-
-    // Connect to the server
-    if (connect(clientSocket, reinterpret_cast<struct sockaddr *>(&serverAddr), sizeof(serverAddr)) == -1)
-    {
-        perror("Error to server");
-        close(clientSocket);
-        return 1;
-    }
-    */
     // Create TCP connection
     
     int client_fd = tcp_connection(srv_ip);
