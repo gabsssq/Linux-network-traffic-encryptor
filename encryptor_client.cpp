@@ -532,11 +532,11 @@ void PerformECDHKeyExchange(const char *srv_ip)
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
     // Send public key to the server
-    send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
+    send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
 
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    read(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
+    read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
