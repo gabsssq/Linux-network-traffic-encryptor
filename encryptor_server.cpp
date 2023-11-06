@@ -508,7 +508,8 @@ void PerformECDHKeyExchange()
     // TCP error propagation
     if (client_fd == -1)
     {
-        return -1;
+        perror("TCP connection error");
+        exit(EXIT_FAILURE);
     }
 
     // Set up the NIST P-521 curve domain
