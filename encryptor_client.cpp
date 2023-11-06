@@ -64,6 +64,7 @@ using CryptoPP::HexEncoder;
 #include "cryptopp/osrng.h"
 using CryptoPP::AutoSeededRandomPool;
 
+#include "cryptopp/sha3.h"
 #include "cryptopp/cryptlib.h"
 using CryptoPP::AuthenticatedSymmetricCipher;
 using CryptoPP::BufferedTransformation;
@@ -302,7 +303,7 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, 
 SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip)
 {
 
-    CryptoPP::SHA256 hash;
+    CryptoPP::SHA3_256 hash;
     byte digest[CryptoPP::SHA256::DIGESTSIZE];
 
     SecByteBlock key(AES::MAX_KEYLENGTH);
@@ -312,6 +313,7 @@ SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip)
     std::ifstream t("key");
     std::stringstream buffer;
     buffer << t.rdbuf();
+
 
     std::string message = buffer.str() + pqc_key;
     hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
@@ -505,8 +507,18 @@ void help()
          << endl;
 }
 
-void PerformECDHKeyExchange(int socket)
+void PerformECDHKeyExchange(const char *srv_ip)
 {
+
+    // Create TCP connection
+
+    int client_fd = tcp_connection(srv_ip);
+    // TCP error propagation
+    if (client_fd == -1)
+    {
+        return -1;
+    }
+
 
     CryptoPP::AutoSeededRandomPool rng;
 
@@ -535,6 +547,9 @@ void PerformECDHKeyExchange(int socket)
     hexEncoder.MessageEnd();
 
     std::cout << "Hexadecimal representation: " << hex << std::endl;
+
+    // Close the socket
+    close(client_fd);
 }
 
 int main(int argc, char *argv[])
@@ -579,20 +594,11 @@ int main(int argc, char *argv[])
     time_t ref = time(NULL);
 
     // ECDH key exchange
-    // Create TCP connection
-
-    int client_fd = tcp_connection(srv_ip);
-    // TCP error propagation
-    if (client_fd == -1)
-    {
-        return -1;
-    }
-
+    
     // Perform ECDH key exchange
-    PerformECDHKeyExchange(client_fd);
+    PerformECDHKeyExchange(srv_ip);
 
-    // Close the socket
-    close(client_fd);
+    
 
     while (1)
     {

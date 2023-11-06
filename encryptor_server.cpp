@@ -50,6 +50,7 @@ using CryptoPP::HexEncoder;
 #include "cryptopp/osrng.h"
 using CryptoPP::AutoSeededRandomPool;
 
+#include "cryptopp/sha3.h"
 #include "cryptopp/cryptlib.h"
 using CryptoPP::AuthenticatedSymmetricCipher;
 using CryptoPP::BufferedTransformation;
@@ -305,7 +306,7 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, struct sockaddr_in 
 SecByteBlock rekey_srv(string pqc_key)
 {
 
-    CryptoPP::SHA256 hash;
+    CryptoPP::SHA3_256 hash;
     byte digest[CryptoPP::SHA256::DIGESTSIZE];
 
     SecByteBlock key(AES::MAX_KEYLENGTH);
@@ -496,9 +497,19 @@ void help()
 }
 
 // ECDH key exchange
-void PerformECDHKeyExchange(int socket)
+void PerformECDHKeyExchange()
 {
     CryptoPP::AutoSeededRandomPool rng;
+
+    // Create TCP connection for ECDH key exchange
+    int ecdh_fd;
+
+    int client_fd = tcp_connection(&ecdh_fd);
+    // TCP error propagation
+    if (client_fd == -1)
+    {
+        return -1;
+    }
 
     // Set up the NIST P-521 curve domain
     CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
@@ -524,6 +535,10 @@ void PerformECDHKeyExchange(int socket)
     hexEncoder.MessageEnd();
 
     std::cout << "Hexadecimal representation: " << hex << std::endl;
+
+    // Close the socket
+    close(client_fd);
+    shutdown(server_fd, SHUT_RDWR);
 }
 
 int main(int argc, char *argv[])
@@ -568,26 +583,11 @@ int main(int argc, char *argv[])
     GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e;
     AutoSeededRandomPool prng;
 
-    // Create TCP connection for ECDH key exchange
-    int ecdh_fd;
-
     while (1)
     {
 
-        
-        int client_fd = tcp_connection(&ecdh_fd);
-        // TCP error propagation
-        if (client_fd == -1)
-        {
-            return -1;
-        }
-
         // Perform ECDH key exchange
-        PerformECDHKeyExchange(client_fd);
-
-        // Close the socket
-        close(client_fd);
-        shutdown(server_fd, SHUT_RDWR);
+        PerformECDHKeyExchange();
 
         // TCP connection create
         int new_socket = tcp_connection(&server_fd);
