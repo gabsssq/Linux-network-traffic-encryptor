@@ -750,12 +750,12 @@ int main(int argc, char *argv[])
         // UDP connection create
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
-        cout << "UDP connection established \n";
-
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
         read(new_socket, bufferTCP, MAXLINE);
         get_qkdkey(qkd_ip, bufferTCP);
+
+        cout << "QKD keyID recieved \n";
 
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
