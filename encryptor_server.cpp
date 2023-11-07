@@ -643,7 +643,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 get_qkdkey(qkd_ip, bufferTCP);
-                key = rekey_srv(pqc_key);
+                key = rekey_srv(pqc_key, ecdh_key);
             }
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
