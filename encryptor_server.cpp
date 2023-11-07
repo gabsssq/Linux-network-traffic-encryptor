@@ -443,7 +443,7 @@ string get_pqckey(int new_socket)
 
 void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
 {
-
+    CryptoPP::SHAKE128 shake128_hash;
     std::ofstream myfile;
     myfile.open("keyID");
     myfile << bufferTCP;
@@ -451,6 +451,12 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
 
     // Obtain QKD key with keyID
     system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
+
+    // hash content of bufferTCP with SHAKE128
+        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
+        std::string pom_param;
+        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
+        qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
 }
 
 // Program usage help
@@ -753,7 +759,6 @@ int main(int argc, char *argv[])
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
         read(new_socket, bufferTCP, MAXLINE);
-        cout << "Recieved: " << bufferTCP << "\n";
         get_qkdkey(qkd_ip, bufferTCP);
 
         cout << "QKD keyID recieved \n";
