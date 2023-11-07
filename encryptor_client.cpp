@@ -614,7 +614,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
 
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 
-        return output_key;
+        return key;
 
     }
     else
@@ -682,9 +682,9 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
 
-        send(client_fd, output_key.str().c_str(), output_key.str().length(), 0);
+        send(client_fd, output_key.c_str(), output_key.length(), 0);
 
-        return output_key;
+        return key;
     }
 }
 
