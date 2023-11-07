@@ -742,9 +742,9 @@ int main(int argc, char *argv[])
         int new_socket = tcp_connection(&server_fd);
 
         // Perform ECDH key exchange
-        // string ecdh_key = PerformECDHKeyExchange(new_socket);
+        string ecdh_key = PerformECDHKeyExchange(new_socket);
         // Establish PQC key
-        // string pqc_key = get_pqckey(new_socket);
+        string pqc_key = get_pqckey(new_socket);
 
         cout << "PQC key established \n";
 
