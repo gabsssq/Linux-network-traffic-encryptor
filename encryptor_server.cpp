@@ -513,6 +513,65 @@ string PerformECDHKeyExchange(int new_socket)
     return hex;
 }
 
+string hmac_hashing(string salt, string key)
+{
+    CryptoPP::SHA3_256 hash;
+    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)salt.c_str(), salt.length());
+
+    hmac.Update((const byte *)key.c_str(), key.length());
+    byte hmac_digest[CryptoPP::SHA3_256::DIGESTSIZE];
+    hmac.Final(hmac_digest);
+
+    // write hmac_digest to string
+    CryptoPP::HexEncoder encoder;
+    std::string hmac_output;
+    encoder.Attach(new CryptoPP::StringSink(hmac_output));
+    encoder.Put(hmac_digest, sizeof(hmac_digest));
+    encoder.MessageEnd();
+
+    return hmac_output;
+}
+
+string sha3_hashing(string key, string *public_value)
+{
+
+    CryptoPP::SHA3_256 hash;
+
+    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
+    string concat = *public_value + key;
+    hash.CalculateDigest(digest, (byte *)concat.c_str(), concat.length());
+
+    // write digest to string
+    CryptoPP::HexEncoder encoder;
+    std::string output;
+    encoder.Attach(new CryptoPP::StringSink(output));
+    encoder.Put(digest, sizeof(digest));
+    encoder.MessageEnd();
+    *public_value = output;
+
+    return output;
+}
+
+std::string xorStrings(const std::string &str1, const std::string &str2)
+{
+    // Ensure the strings have the same length
+    if (str1.length() != str2.length())
+    {
+        throw std::runtime_error("Strings must have the same length for XOR operation");
+    }
+
+    // Result string
+    std::string result;
+
+    // XOR each pair of characters
+    for (std::size_t i = 0; i < str1.length(); ++i)
+    {
+        result += static_cast<char>(str1[i] ^ str2[i]);
+    }
+
+    return result;
+}
+
 /*
    Rekeying - client mode
 
@@ -535,8 +594,8 @@ SecByteBlock rekey_srv(int new_socket)
 
     if (qkd_ip.empty())
     {
-        string pqc_key = get_pqckey(client_fd);
-        string ecdh_key = PerformECDHKeyExchange(client_fd);
+        string pqc_key = get_pqckey(new_socket);
+        string ecdh_key = PerformECDHKeyExchange(new_socket);
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
@@ -564,8 +623,8 @@ SecByteBlock rekey_srv(int new_socket)
     else
     {
 
-        string pqc_key = get_pqckey(client_fd);
-        string ecdh_key = PerformECDHKeyExchange(client_fd);
+        string pqc_key = get_pqckey(new_socket);
+        string ecdh_key = PerformECDHKeyExchange(new_socket);
 
         system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
 
