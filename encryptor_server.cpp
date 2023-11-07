@@ -51,6 +51,7 @@ using CryptoPP::HexEncoder;
 using CryptoPP::AutoSeededRandomPool;
 
 #include "cryptopp/sha3.h"
+#include "cryptopp/shake.h"
 #include "cryptopp/cryptlib.h"
 using CryptoPP::AuthenticatedSymmetricCipher;
 using CryptoPP::BufferedTransformation;
@@ -303,8 +304,11 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, struct sockaddr_in 
    and than send its ID to gateway in server mode.
 */
 
-SecByteBlock rekey_srv(string pqc_key, string ecdh_key)
+SecByteBlock rekey_srv(int new_socket)
 {
+
+    string pqc_key = get_pqckey(new_socket);
+    string ecdh_key = PerformECDHKeyExchange(new_socket);
 
     CryptoPP::SHA3_256 hash;
     byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
@@ -314,7 +318,7 @@ SecByteBlock rekey_srv(string pqc_key, string ecdh_key)
     std::stringstream buffer;
     buffer << t.rdbuf();
 
-    std::string message = buffer.str() + pqc_key;
+    std::string message = buffer.str() + pqc_key + ecdh_key;
 
     hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
 
@@ -616,7 +620,7 @@ int main(int argc, char *argv[])
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(pqc_key, ecdh_key);
+        key = rekey_srv(new_socket);
 
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
@@ -645,7 +649,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 get_qkdkey(qkd_ip, bufferTCP);
-                key = rekey_srv(pqc_key, ecdh_key);
+                key = rekey_srv(new_socket);
             }
 
             // Create runnable thread if there are data available either on tun interface or UDP socket

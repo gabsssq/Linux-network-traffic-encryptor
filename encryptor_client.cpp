@@ -65,6 +65,7 @@ using CryptoPP::HexEncoder;
 using CryptoPP::AutoSeededRandomPool;
 
 #include "cryptopp/sha3.h"
+#include "cryptopp/shake.h"
 #include "cryptopp/cryptlib.h"
 using CryptoPP::AuthenticatedSymmetricCipher;
 using CryptoPP::BufferedTransformation;
@@ -87,7 +88,8 @@ using CryptoPP::GCM;
 #include "assert.h"
 
 string xy_str;
-string cipher_data_str;
+string kyber_cipher_data_str;
+std::string qkd_parameter;
 
 string convertToString(char *a)
 {
@@ -303,39 +305,62 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, 
    Client get new key from QKD server, combine it with PQC key
    and than send its ID to gateway in server mode.
 */
-SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip, string ecdh_key)
+SecByteBlock rekey_cli(int client_fd, string qkd_ip)
 {
-
     CryptoPP::SHA3_256 hash;
+    CryptoPP::SHAKE128 shake128_hash;
     byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
 
     SecByteBlock key(AES::MAX_KEYLENGTH);
 
-    system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
-
-    std::ifstream t("key");
-    std::stringstream buffer;
-    buffer << t.rdbuf();
-
-    std::string message = buffer.str() + pqc_key;
-    hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
-    CryptoPP::HexEncoder encoder;
-    std::string output;
-    encoder.Attach(new CryptoPP::StringSink(output));
-    encoder.Put(digest, sizeof(digest));
-    encoder.MessageEnd();
-
-    int x = 0;
-    for (unsigned int i = 0; i < output.length(); i += 2)
+    if (argv[2] == NULL)
     {
-        std::string bytestring = output.substr(i, 2);
-        key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-        x++;
-    }
 
-    std::ifstream s("keyID");
-    std::stringstream bufferTCP;
-    bufferTCP << s.rdbuf();
+
+
+
+
+    }
+    else
+    {
+
+        string pqc_key = get_pqckey(client_fd);
+        string ecdh_key = PerformECDHKeyExchange(client_fd);
+
+
+        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
+
+        std::ifstream t("key");
+        std::stringstream buffer;
+        buffer << t.rdbuf();
+
+        std::string message = buffer.str() + pqc_key + ecdh_key;
+        hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
+        CryptoPP::HexEncoder encoder;
+        std::string output;
+        encoder.Attach(new CryptoPP::StringSink(output));
+        encoder.Put(digest, sizeof(digest));
+        encoder.MessageEnd();
+
+        int x = 0;
+        for (unsigned int i = 0; i < output.length(); i += 2)
+        {
+            std::string bytestring = output.substr(i, 2);
+            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
+
+        std::ifstream s("keyID");
+        std::stringstream bufferTCP;
+        bufferTCP << s.rdbuf();
+
+        // hash content of bufferTCP with SHAKE128
+        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
+        std::string pom_param;
+        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
+        qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
+
+    }
 
     send(client_fd, bufferTCP.str().c_str(), bufferTCP.str().length(), 0);
 
@@ -490,7 +515,7 @@ string get_pqckey(int client_fd)
 
     // take the first 216 bytes of the cipher text and put it in the new variable called cipher_data
     std::vector<uint8_t> cipher_data(_cipher.begin(), _cipher.begin() + 216);
-    cipher_data_str = kyber_utils::to_hex(cipher_data);
+    kyber_cipher_data_str = kyber_utils::to_hex(cipher_data);
 
     // Decapsulate cipher text and obtain KDF
     auto cipher = std::span<uint8_t, kyber512_kem::CIPHER_LEN>(_cipher);
@@ -631,7 +656,7 @@ int main(int argc, char *argv[])
         string pqc_key = get_pqckey(client_fd);
 
         cout << "PQC key: " << pqc_key << endl;
-        //close(client_fd);
+        // close(client_fd);
 
         // Create UDP connection
         int sockfd = udp_connection(&servaddr, &len, srv_ip);
@@ -644,7 +669,7 @@ int main(int argc, char *argv[])
         while (status != 0)
         {
             // Establish new hybrid key
-            key = rekey_cli(client_fd, pqc_key, qkd_ip, ecdh_key);
+            key = rekey_cli(client_fd, qkd_ip);
             ref = time(NULL);
 
             cout << "New key established" << endl;
