@@ -543,7 +543,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
 
     SecByteBlock key(AES::MAX_KEYLENGTH);
 
-    if (argv[2] == NULL)
+    if (qkd_ip == NULL)
     {
 
 
@@ -590,11 +590,13 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
         qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
 
+        send(client_fd, bufferTCP.str().c_str(), bufferTCP.str().length(), 0);
+
+        return key;
     }
 
-    send(client_fd, bufferTCP.str().c_str(), bufferTCP.str().length(), 0);
 
-    return key;
+    
 }
 
 int main(int argc, char *argv[])
