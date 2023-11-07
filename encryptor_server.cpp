@@ -297,46 +297,7 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, struct sockaddr_in 
     *threads += 1;
 }
 
-/*
-   Rekeying - client mode
 
-   Client get new key from QKD server, combine it with PQC key
-   and than send its ID to gateway in server mode.
-*/
-
-SecByteBlock rekey_srv(int new_socket)
-{
-
-    string pqc_key = get_pqckey(new_socket);
-    string ecdh_key = PerformECDHKeyExchange(new_socket);
-
-    CryptoPP::SHA3_256 hash;
-    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
-
-    SecByteBlock key(AES::MAX_KEYLENGTH);
-    std::ifstream t("key");
-    std::stringstream buffer;
-    buffer << t.rdbuf();
-
-    std::string message = buffer.str() + pqc_key + ecdh_key;
-
-    hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
-
-    CryptoPP::HexEncoder encoder;
-    std::string output;
-    encoder.Attach(new CryptoPP::StringSink(output));
-    encoder.Put(digest, sizeof(digest));
-    encoder.MessageEnd();
-
-    int x = 0;
-    for (unsigned int i = 0; i < output.length(); i += 2)
-    {
-        std::string bytestring = output.substr(i, 2);
-        key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-        x++;
-    }
-    return key;
-}
 
 // TCP socket creation and "Hello" messages exchange
 int tcp_connection(int *pt_server_fd)
@@ -547,6 +508,47 @@ string PerformECDHKeyExchange(int new_socket)
     //close(client_fd);
 
     return hex;
+}
+
+/*
+   Rekeying - client mode
+
+   Client get new key from QKD server, combine it with PQC key
+   and than send its ID to gateway in server mode.
+*/
+
+SecByteBlock rekey_srv(int new_socket)
+{
+
+    string pqc_key = get_pqckey(new_socket);
+    string ecdh_key = PerformECDHKeyExchange(new_socket);
+
+    CryptoPP::SHA3_256 hash;
+    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
+
+    SecByteBlock key(AES::MAX_KEYLENGTH);
+    std::ifstream t("key");
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+
+    std::string message = buffer.str() + pqc_key + ecdh_key;
+
+    hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
+
+    CryptoPP::HexEncoder encoder;
+    std::string output;
+    encoder.Attach(new CryptoPP::StringSink(output));
+    encoder.Put(digest, sizeof(digest));
+    encoder.MessageEnd();
+
+    int x = 0;
+    for (unsigned int i = 0; i < output.length(); i += 2)
+    {
+        std::string bytestring = output.substr(i, 2);
+        key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+        x++;
+    }
+    return key;
 }
 
 int main(int argc, char *argv[])

@@ -299,73 +299,7 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, 
     *threads += 1;
 }
 
-/*
-   Rekeying - client mode
 
-   Client get new key from QKD server, combine it with PQC key
-   and than send its ID to gateway in server mode.
-*/
-SecByteBlock rekey_cli(int client_fd, string qkd_ip)
-{
-    CryptoPP::SHA3_256 hash;
-    CryptoPP::SHAKE128 shake128_hash;
-    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
-
-    SecByteBlock key(AES::MAX_KEYLENGTH);
-
-    if (argv[2] == NULL)
-    {
-
-
-
-
-
-    }
-    else
-    {
-
-        string pqc_key = get_pqckey(client_fd);
-        string ecdh_key = PerformECDHKeyExchange(client_fd);
-
-
-        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
-
-        std::ifstream t("key");
-        std::stringstream buffer;
-        buffer << t.rdbuf();
-
-        std::string message = buffer.str() + pqc_key + ecdh_key;
-        hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
-        CryptoPP::HexEncoder encoder;
-        std::string output;
-        encoder.Attach(new CryptoPP::StringSink(output));
-        encoder.Put(digest, sizeof(digest));
-        encoder.MessageEnd();
-
-        int x = 0;
-        for (unsigned int i = 0; i < output.length(); i += 2)
-        {
-            std::string bytestring = output.substr(i, 2);
-            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-            x++;
-        }
-
-        std::ifstream s("keyID");
-        std::stringstream bufferTCP;
-        bufferTCP << s.rdbuf();
-
-        // hash content of bufferTCP with SHAKE128
-        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
-        std::string pom_param;
-        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
-        qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
-
-    }
-
-    send(client_fd, bufferTCP.str().c_str(), bufferTCP.str().length(), 0);
-
-    return key;
-}
 
 // TCP socket creation and "Hello" messages exchange
 int tcp_connection(const char *srv_ip)
@@ -593,6 +527,74 @@ string PerformECDHKeyExchange(int client_fd)
     */
 
     return hex;
+}
+
+/*
+   Rekeying - client mode
+
+   Client get new key from QKD server, combine it with PQC key
+   and than send its ID to gateway in server mode.
+*/
+SecByteBlock rekey_cli(int client_fd, string qkd_ip)
+{
+    CryptoPP::SHA3_256 hash;
+    CryptoPP::SHAKE128 shake128_hash;
+    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
+
+    SecByteBlock key(AES::MAX_KEYLENGTH);
+
+    if (argv[2] == NULL)
+    {
+
+
+
+
+
+    }
+    else
+    {
+
+        string pqc_key = get_pqckey(client_fd);
+        string ecdh_key = PerformECDHKeyExchange(client_fd);
+
+
+        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
+
+        std::ifstream t("key");
+        std::stringstream buffer;
+        buffer << t.rdbuf();
+
+        std::string message = buffer.str() + pqc_key + ecdh_key;
+        hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
+        CryptoPP::HexEncoder encoder;
+        std::string output;
+        encoder.Attach(new CryptoPP::StringSink(output));
+        encoder.Put(digest, sizeof(digest));
+        encoder.MessageEnd();
+
+        int x = 0;
+        for (unsigned int i = 0; i < output.length(); i += 2)
+        {
+            std::string bytestring = output.substr(i, 2);
+            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
+
+        std::ifstream s("keyID");
+        std::stringstream bufferTCP;
+        bufferTCP << s.rdbuf();
+
+        // hash content of bufferTCP with SHAKE128
+        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
+        std::string pom_param;
+        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
+        qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
+
+    }
+
+    send(client_fd, bufferTCP.str().c_str(), bufferTCP.str().length(), 0);
+
+    return key;
 }
 
 int main(int argc, char *argv[])
