@@ -86,6 +86,9 @@ using CryptoPP::GCM;
 
 #include "assert.h"
 
+string xy_str;
+string cipher_data_str;
+
 string convertToString(char *a)
 {
     string s = a;
@@ -300,11 +303,11 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, 
    Client get new key from QKD server, combine it with PQC key
    and than send its ID to gateway in server mode.
 */
-SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip)
+SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip, string ecdh_key)
 {
 
     CryptoPP::SHA3_256 hash;
-    byte digest[CryptoPP::SHA256::DIGESTSIZE];
+    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
 
     SecByteBlock key(AES::MAX_KEYLENGTH);
 
@@ -313,7 +316,6 @@ SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip)
     std::ifstream t("key");
     std::stringstream buffer;
     buffer << t.rdbuf();
-
 
     std::string message = buffer.str() + pqc_key;
     hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
@@ -486,6 +488,10 @@ string get_pqckey(int client_fd)
     std::vector<uint8_t> _cipher(kyber512_kem::CIPHER_LEN, 0);
     _cipher = pqc_buffer;
 
+    // take the first 216 bytes of the cipher text and put it in the new variable called cipher_data
+    std::vector<uint8_t> cipher_data(_cipher.begin(), _cipher.begin() + 216);
+    cipher_data_str = kyber_utils::to_hex(cipher_data);
+
     // Decapsulate cipher text and obtain KDF
     auto cipher = std::span<uint8_t, kyber512_kem::CIPHER_LEN>(_cipher);
     auto rkdf = kyber512_kem::decapsulate(skey, cipher);
@@ -507,24 +513,30 @@ void help()
          << endl;
 }
 
-void PerformECDHKeyExchange(const char *srv_ip)
+string PerformECDHKeyExchange(int client_fd)
 {
+    /*close(client_fd);
 
     // Create TCP connection
-
-    int client_fd = tcp_connection(srv_ip);
+    int custom_connection = tcp_connection(srv_ip);
     // TCP error propagation
-    if (client_fd == -1)
+    if (custom_connection == -1)
     {
         perror("TCP connection error");
         exit(EXIT_FAILURE);
-    }
-
+    }*/
 
     CryptoPP::AutoSeededRandomPool rng;
 
     // Set up the NIST P-521 curve domain
     CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
+
+    CryptoPP::Integer x = dh.GetGroupParameters().GetSubgroupGenerator().x;
+    CryptoPP::Integer y = dh.GetGroupParameters().GetSubgroupGenerator().y;
+    // take first 216 bytes of the x and y coordinates
+    string x_str = CryptoPP::IntToString(x);
+    string y_str = CryptoPP::IntToString(y);
+    string xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
 
     // Generate ECDH keys
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
@@ -549,8 +561,13 @@ void PerformECDHKeyExchange(const char *srv_ip)
 
     std::cout << "Hexadecimal representation: " << hex << std::endl;
 
+    /*
     // Close the socket
-    close(client_fd);
+    close(custom_connection);
+    client_fd = tcp_connection(srv_ip);
+    */
+
+    return hex;
 }
 
 int main(int argc, char *argv[])
@@ -594,13 +611,6 @@ int main(int argc, char *argv[])
     // Time reference variable for rekey purposes
     time_t ref = time(NULL);
 
-    // ECDH key exchange
-    
-    // Perform ECDH key exchange
-    PerformECDHKeyExchange(srv_ip);
-
-    
-
     while (1)
     {
         int status = -1;
@@ -614,6 +624,9 @@ int main(int argc, char *argv[])
             return -1;
         }
 
+        // ECDH key exchange
+        // Perform ECDH key exchange
+        string ecdh_key = PerformECDHKeyExchange(client_fd);
         // Establish PQC key
         string pqc_key = get_pqckey(client_fd);
 
@@ -626,7 +639,7 @@ int main(int argc, char *argv[])
         while (status != 0)
         {
             // Establish new hybrid key
-            key = rekey_cli(client_fd, pqc_key, qkd_ip);
+            key = rekey_cli(client_fd, pqc_key, qkd_ip, ecdh_key);
             ref = time(NULL);
 
             // Trigger Rekey after some period of time (10 min)

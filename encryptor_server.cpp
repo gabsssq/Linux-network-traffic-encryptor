@@ -307,7 +307,7 @@ SecByteBlock rekey_srv(string pqc_key)
 {
 
     CryptoPP::SHA3_256 hash;
-    byte digest[CryptoPP::SHA256::DIGESTSIZE];
+    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
 
     SecByteBlock key(AES::MAX_KEYLENGTH);
     std::ifstream t("key");
