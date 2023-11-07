@@ -480,21 +480,26 @@ string PerformECDHKeyExchange(int new_socket)
 
     // Set up the NIST P-521 curve domain
     CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
-
     // Generate ECDH keys
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
+    CryptoPP::Integer x = dh.GetGroupParameters().GetSubgroupGenerator().x;
+    CryptoPP::Integer y = dh.GetGroupParameters().GetSubgroupGenerator().y;
+    // take first 216 bytes of the x and y coordinates
+    string x_str = CryptoPP::IntToString(x);
+    string y_str = CryptoPP::IntToString(y);
+    string xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
+
+    // Send public key to the server
+    send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    read(new_socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    // Send public key to the server
-    send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
-
+    read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
-    dh.Agree(sharedSecret, privateKey, receivedKey);
+    std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
 
     string hex;
     CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);
@@ -503,8 +508,11 @@ string PerformECDHKeyExchange(int new_socket)
 
     std::cout << "Hexadecimal representation: " << hex << std::endl;
 
+    /*
     // Close the socket
-    // close(client_fd);
+    close(custom_connection);
+    client_fd = tcp_connection(srv_ip);
+    */
 
     return hex;
 }
