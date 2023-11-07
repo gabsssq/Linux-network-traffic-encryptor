@@ -493,10 +493,10 @@ string PerformECDHKeyExchange(int new_socket)
     string xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
 
     // Send public key to the server
-    send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
+    send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
+    read(new_socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
