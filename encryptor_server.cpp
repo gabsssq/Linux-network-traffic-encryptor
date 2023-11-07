@@ -519,9 +519,12 @@ string PerformECDHKeyExchange(int new_socket)
 
 SecByteBlock rekey_srv(int new_socket)
 {
-
+    
+    
     string pqc_key = get_pqckey(new_socket);
     string ecdh_key = PerformECDHKeyExchange(new_socket);
+
+
 
     CryptoPP::SHA3_256 hash;
     byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
