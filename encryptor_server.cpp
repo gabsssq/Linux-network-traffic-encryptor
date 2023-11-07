@@ -590,7 +590,7 @@ int main(int argc, char *argv[])
         // Perform ECDH key exchange
         PerformECDHKeyExchange();
 
-        shutdown(server_fd, SHUT_RDWR);
+        //shutdown(server_fd, SHUT_RDWR);
 
         // TCP connection create
         int new_socket = tcp_connection(&server_fd);
