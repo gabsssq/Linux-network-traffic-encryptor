@@ -90,6 +90,11 @@ using CryptoPP::GCM;
 
 #include "assert.h"
 
+string xy_str;
+string kyber_cipher_data_str;
+string qkd_parameter;
+int counter = 0;
+
 string convertToString(char *a)
 {
     string s = a;
@@ -297,8 +302,6 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, struct sockaddr_in 
     *threads += 1;
 }
 
-
-
 // TCP socket creation and "Hello" messages exchange
 int tcp_connection(int *pt_server_fd)
 {
@@ -467,7 +470,7 @@ string PerformECDHKeyExchange(int new_socket)
     CryptoPP::AutoSeededRandomPool rng;
 
     // Create TCP connection for ECDH key exchange
-    
+
     /*
     int ecdh_fd;
 
@@ -505,7 +508,7 @@ string PerformECDHKeyExchange(int new_socket)
     std::cout << "Hexadecimal representation: " << hex << std::endl;
 
     // Close the socket
-    //close(client_fd);
+    // close(client_fd);
 
     return hex;
 }
@@ -519,39 +522,115 @@ string PerformECDHKeyExchange(int new_socket)
 
 SecByteBlock rekey_srv(int new_socket)
 {
-    
-    
-    string pqc_key = get_pqckey(new_socket);
-    string ecdh_key = PerformECDHKeyExchange(new_socket);
-
-
-
     CryptoPP::SHA3_256 hash;
+    CryptoPP::SHAKE128 shake128_hash;
     byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
-
     SecByteBlock key(AES::MAX_KEYLENGTH);
-    std::ifstream t("key");
-    std::stringstream buffer;
-    buffer << t.rdbuf();
+    counter++;
+    // get system time and convert it to string
+    time_t now = time(0);
+    tm *ltm = localtime(&now);
+    string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
+    string salt = time + std::to_string(counter);
 
-    std::string message = buffer.str() + pqc_key + ecdh_key;
-
-    hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
-
-    CryptoPP::HexEncoder encoder;
-    std::string output;
-    encoder.Attach(new CryptoPP::StringSink(output));
-    encoder.Put(digest, sizeof(digest));
-    encoder.MessageEnd();
-
-    int x = 0;
-    for (unsigned int i = 0; i < output.length(); i += 2)
+    if (qkd_ip.empty())
     {
-        std::string bytestring = output.substr(i, 2);
-        key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-        x++;
+        string pqc_key = get_pqckey(client_fd);
+        string ecdh_key = PerformECDHKeyExchange(client_fd);
+
+        // all parameters set, starting to creating hybrid key
+        string key_one = hmac_hashing(salt, pqc_key);
+        string key_two = hmac_hashing(salt, ecdh_key);
+
+        string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
+        string param_two = sha3_hashing(ecdh_key, &xy_str);
+
+        string second_round_key_one = hmac_hashing(key_one, param_one + param_two);
+        string second_round_key_two = hmac_hashing(key_two, param_one + param_two);
+
+        string key = xorStrings(second_round_key_one, second_round_key_two);
+
+        // hash final key with SHA3_256
+        hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
+        CryptoPP::HexEncoder encode_key;
+        std::string output_key;
+        encode_key.Attach(new CryptoPP::StringSink(output_key));
+        encode_key.Put(digest, sizeof(digest));
+        encode_key.MessageEnd();
+
+        CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
+        return sec_key;
     }
-    return key;
+    else
+    {
+
+        string pqc_key = get_pqckey(client_fd);
+        string ecdh_key = PerformECDHKeyExchange(client_fd);
+
+        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
+
+        std::ifstream t("key");
+        std::stringstream buffer;
+        buffer << t.rdbuf();
+        // buffer to string
+        string buffer_str = buffer.str();
+
+        /* std::string message = buffer.str() + pqc_key + ecdh_key;
+         hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
+         CryptoPP::HexEncoder encoder;
+         std::string output;
+         encoder.Attach(new CryptoPP::StringSink(output));
+         encoder.Put(digest, sizeof(digest));
+         encoder.MessageEnd();
+
+         int x = 0;
+         for (unsigned int i = 0; i < output.length(); i += 2)
+         {
+             std::string bytestring = output.substr(i, 2);
+             key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+             x++;
+         }
+         */
+
+        std::ifstream s("keyID");
+        std::stringstream bufferTCP;
+        bufferTCP << s.rdbuf();
+
+        // hash content of bufferTCP with SHAKE128
+        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
+        std::string pom_param;
+        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
+        qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
+
+        // all parameters set, starting to creating hybrid key
+        string key_one = hmac_hashing(salt, pqc_key);
+        string key_two = hmac_hashing(salt, ecdh_key);
+        string key_three = hmac_hashing(salt, buffer_str);
+
+        string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
+        string param_two = sha3_hashing(ecdh_key, &xy_str);
+        string param_three = sha3_hashing(buffer_str, &qkd_parameter);
+
+        string second_round_key_one = hmac_hashing(key_one, param_two + param_three);
+        string second_round_key_two = hmac_hashing(key_two, param_one + param_three);
+        string second_round_key_three = hmac_hashing(key_three, param_one + param_two);
+
+        string third_round_key_one = xorStrings(second_round_key_one, second_round_key_two);
+        string fourth_round_key_one = xorStrings(third_round_key_one, second_round_key_three);
+
+        string key = xorStrings(third_round_key_one, fourth_round_key_one);
+
+        // hash final key with SHA3_256
+        hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
+        CryptoPP::HexEncoder encode_key;
+        std::string output_key;
+        encode_key.Attach(new CryptoPP::StringSink(output_key));
+        encode_key.Put(digest, sizeof(digest));
+        encode_key.MessageEnd();
+
+        CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
+        return sec_key;
+    }
 }
 
 int main(int argc, char *argv[])
@@ -598,9 +677,6 @@ int main(int argc, char *argv[])
 
     while (1)
     {
-
-
-        
 
         // TCP connection create
         int new_socket = tcp_connection(&server_fd);
