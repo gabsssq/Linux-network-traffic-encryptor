@@ -593,7 +593,7 @@ int main(int argc, char *argv[])
         //shutdown(server_fd, SHUT_RDWR);
 
         // TCP connection create
-        int new_socket = tcp_connection(&server_fd);
+        //int new_socket = tcp_connection(&server_fd);
 
         // Establish PQC key
         string pqc_key = get_pqckey(new_socket);

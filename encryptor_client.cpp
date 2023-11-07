@@ -632,13 +632,14 @@ int main(int argc, char *argv[])
 
         cout << "PQC key: " << pqc_key << endl;
 
-        // Set TCP socket to non-blocking state
-        fcntl(client_fd, F_SETFL, O_NONBLOCK);
         
         // Create UDP connection
         int sockfd = udp_connection(&servaddr, &len, srv_ip);
 
         cout << "UDP connection established" << endl;
+        
+        // Set TCP socket to non-blocking state
+        fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
 
         while (status != 0)
