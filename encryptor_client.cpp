@@ -306,8 +306,6 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, 
 SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip, string ecdh_key)
 {
 
-    cout << "Rekeying..." << endl;
-
     CryptoPP::SHA3_256 hash;
     byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
 
@@ -636,6 +634,8 @@ int main(int argc, char *argv[])
 
         // Create UDP connection
         int sockfd = udp_connection(&servaddr, &len, srv_ip);
+
+        cout << "UDP connection established" << endl;
 
         // Set TCP socket to non-blocking state
         fcntl(client_fd, F_SETFL, O_NONBLOCK);
