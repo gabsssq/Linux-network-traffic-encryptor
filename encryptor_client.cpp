@@ -498,16 +498,18 @@ string PerformECDHKeyExchange(int client_fd)
     // take first 216 bytes of the x and y coordinates
     string x_str = CryptoPP::IntToString(x);
     string y_str = CryptoPP::IntToString(y);
-    string xy_str = x_str.substr(0, 400) + y_str.substr(0, 400);
+    string xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
 
 
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
-
+    cout << "Public key sent" << endl;
+    cout << "Public key length: " << publicKey.SizeInBytes() << endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-
+    cout << "Public key received" << endl;
+    cout << "Public key length: " << receivedKey.SizeInBytes() << endl; 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
