@@ -591,7 +591,7 @@ int main(int argc, char *argv[])
     {
 
 
-        shutdown(server_fd, SHUT_RDWR);
+        //shutdown(server_fd, SHUT_RDWR);
 
         // TCP connection create
         int new_socket = tcp_connection(&server_fd);
@@ -621,6 +621,8 @@ int main(int argc, char *argv[])
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
+
+        cout << "Key establishment completed \n";
 
         // Return to "waiting on TCP connection" state if TCP connection seems dead
         while (status != 0)
