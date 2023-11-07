@@ -309,6 +309,8 @@ SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip, string ecdh
     CryptoPP::SHA3_256 hash;
     byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
 
+    cout << "Rekeying..." << endl;
+
     SecByteBlock key(AES::MAX_KEYLENGTH);
 
     system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
