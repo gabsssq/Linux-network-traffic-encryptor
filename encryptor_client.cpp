@@ -567,6 +567,26 @@ string sha3_hashing(string key, string *public_value)
     return output;
 }
 
+std::string xorStrings(const std::string &str1, const std::string &str2)
+{
+    // Ensure the strings have the same length
+    if (str1.length() != str2.length())
+    {
+        throw std::runtime_error("Strings must have the same length for XOR operation");
+    }
+
+    // Result string
+    std::string result;
+
+    // XOR each pair of characters
+    for (std::size_t i = 0; i < str1.length(); ++i)
+    {
+        result += static_cast<char>(str1[i] ^ str2[i]);
+    }
+
+    return result;
+}
+
 /*
    Rekeying - client mode
 
@@ -594,15 +614,14 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
-        
 
         string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
         string param_two = sha3_hashing(ecdh_key, &xy_str);
-        
+
         string second_round_key_one = hmac_hashing(key_one, param_one + param_two);
         string second_round_key_two = hmac_hashing(key_two, param_one + param_two);
 
-        string key = second_round_key_one ^ second_round_key_two;
+        string key = xorStrings(second_round_key_one, second_round_key_two);
 
         // hash final key with SHA3_256
         hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
@@ -614,8 +633,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
 
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 
-        return key;
-
+        CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
+        return sec_key;
     }
     else
     {
@@ -628,25 +647,25 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         std::ifstream t("key");
         std::stringstream buffer;
         buffer << t.rdbuf();
-        //buffer to string
+        // buffer to string
         string buffer_str = buffer.str();
 
-       /* std::string message = buffer.str() + pqc_key + ecdh_key;
-        hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
-        CryptoPP::HexEncoder encoder;
-        std::string output;
-        encoder.Attach(new CryptoPP::StringSink(output));
-        encoder.Put(digest, sizeof(digest));
-        encoder.MessageEnd();
+        /* std::string message = buffer.str() + pqc_key + ecdh_key;
+         hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
+         CryptoPP::HexEncoder encoder;
+         std::string output;
+         encoder.Attach(new CryptoPP::StringSink(output));
+         encoder.Put(digest, sizeof(digest));
+         encoder.MessageEnd();
 
-        int x = 0;
-        for (unsigned int i = 0; i < output.length(); i += 2)
-        {
-            std::string bytestring = output.substr(i, 2);
-            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-            x++;
-        }
-        */
+         int x = 0;
+         for (unsigned int i = 0; i < output.length(); i += 2)
+         {
+             std::string bytestring = output.substr(i, 2);
+             key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+             x++;
+         }
+         */
 
         std::ifstream s("keyID");
         std::stringstream bufferTCP;
@@ -661,7 +680,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
-        string key_three = hmac_hashing(salt, buffer_string);
+        string key_three = hmac_hashing(salt, buffer_str);
 
         string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
         string param_two = sha3_hashing(ecdh_key, &xy_str);
@@ -671,8 +690,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         string second_round_key_two = hmac_hashing(key_two, param_one + param_three);
         string second_round_key_three = hmac_hashing(key_three, param_one + param_two);
 
-        string third_round_key_one = second_round_key_one ^ second_round_key_two;
-        string fourth_round_key_one = third_round_key_one ^ second_round_key_three;
+        string third_round_key_one = xorStrings(second_round_key_one, second_round_key_two);
+        string fourth_round_key_one = xorStrings(third_round_key_one, second_round_key_three);
 
         string key = third_round_key_one ^ fourth_round_key_one;
 
@@ -685,9 +704,9 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         encode_key.MessageEnd();
 
         send(client_fd, output_key.c_str(), output_key.length(), 0);
-        
 
-        return key;
+        CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
+        return sec_key;
     }
 }
 
