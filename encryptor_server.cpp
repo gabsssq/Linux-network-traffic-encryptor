@@ -448,15 +448,19 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     myfile.open("keyID");
     myfile << bufferTCP;
     myfile.close();
+    //convert bufferTCP to string  
+    std::stringstream bufferTCP_string;
+    bufferTCP_string << bufferTCP;
+    
 
     // Obtain QKD key with keyID
     system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
 
     // hash content of bufferTCP with SHAKE128
-        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
+        shake128_hash.Update((const byte *)bufferTCP_string.str().c_str(), bufferTCP_string.str().length());
         std::string pom_param;
         shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
-        qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
+        qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 108);
 }
 
 // Program usage help
