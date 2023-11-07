@@ -693,7 +693,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         string third_round_key_one = xorStrings(second_round_key_one, second_round_key_two);
         string fourth_round_key_one = xorStrings(third_round_key_one, second_round_key_three);
 
-        string key = third_round_key_one ^ fourth_round_key_one;
+        string key = xorStrings(third_round_key_one, fourth_round_key_one);
 
         // hash final key with SHA3_256
         hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
