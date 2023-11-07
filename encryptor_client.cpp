@@ -770,7 +770,7 @@ int main(int argc, char *argv[])
         // Establish PQC key
         //string pqc_key = get_pqckey(client_fd);
 
-        cout << "PQC key: " << pqc_key << endl;
+        //cout << "PQC key: " << pqc_key << endl;
         // close(client_fd);
 
         // Create UDP connection
