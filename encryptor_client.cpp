@@ -713,11 +713,11 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
 int main(int argc, char *argv[])
 {
 
-    if (argc < 3)
+    /*if (argc < 3)
     {
         help();
         return 0;
-    }
+    }*/
 
     // First argument - IP of gateway in server mode
     const char *srv_ip = argv[1];

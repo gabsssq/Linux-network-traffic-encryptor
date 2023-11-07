@@ -695,11 +695,11 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
 int main(int argc, char *argv[])
 {
 
-    if (argc < 2)
+    /*if (argc < 2)
     {
         help();
         return 0;
-    }
+    }*/
 
     // First argument - QKD server IP address
     string qkd_ip = argv[1];
