@@ -490,7 +490,7 @@ string PerformECDHKeyExchange(int new_socket)
     // take first 216 bytes of the x and y coordinates
     string x_str = CryptoPP::IntToString(x);
     string y_str = CryptoPP::IntToString(y);
-    string xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
+    xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
 
     // Send public key to the server
     send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
