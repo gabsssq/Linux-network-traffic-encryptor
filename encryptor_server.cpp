@@ -753,6 +753,7 @@ int main(int argc, char *argv[])
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
         read(new_socket, bufferTCP, MAXLINE);
+        cout << "Recieved: " << bufferTCP << "\n";
         get_qkdkey(qkd_ip, bufferTCP);
 
         cout << "QKD keyID recieved \n";
