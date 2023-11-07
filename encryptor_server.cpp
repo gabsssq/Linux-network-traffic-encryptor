@@ -579,7 +579,7 @@ std::string xorStrings(const std::string &str1, const std::string &str2)
    and than send its ID to gateway in server mode.
 */
 
-SecByteBlock rekey_srv(int new_socket)
+SecByteBlock rekey_srv(int new_socket, string qkd_ip)
 {
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
@@ -760,7 +760,7 @@ int main(int argc, char *argv[])
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(new_socket);
+        key = rekey_srv(new_socket, qkd_ip);
 
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
