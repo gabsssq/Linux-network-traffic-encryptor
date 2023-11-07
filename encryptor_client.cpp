@@ -306,10 +306,10 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, 
 SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip, string ecdh_key)
 {
 
+    cout << "Rekeying..." << endl;
+
     CryptoPP::SHA3_256 hash;
     byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
-
-    cout << "Rekeying..." << endl;
 
     SecByteBlock key(AES::MAX_KEYLENGTH);
 
