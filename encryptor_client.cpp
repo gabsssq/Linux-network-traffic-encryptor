@@ -644,6 +644,8 @@ int main(int argc, char *argv[])
             key = rekey_cli(client_fd, pqc_key, qkd_ip, ecdh_key);
             ref = time(NULL);
 
+            cout << "New key established" << endl;
+
             // Trigger Rekey after some period of time (10 min)
             while (time(NULL) - ref <= 600)
             {
