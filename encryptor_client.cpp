@@ -473,7 +473,6 @@ void help()
 
 string PerformECDHKeyExchange(int client_fd)
 {
-    
 
     CryptoPP::AutoSeededRandomPool rng;
 
@@ -490,7 +489,6 @@ string PerformECDHKeyExchange(int client_fd)
     string x_str = CryptoPP::IntToString(x);
     string y_str = CryptoPP::IntToString(y);
     string xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
-
 
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
@@ -595,10 +593,11 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
 
+    string pqc_key = get_pqckey(client_fd);
+    string ecdh_key = PerformECDHKeyExchange(client_fd);
+
     if (qkd_ip.empty())
     {
-        string pqc_key = get_pqckey(client_fd);
-        string ecdh_key = PerformECDHKeyExchange(client_fd);
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
@@ -627,9 +626,6 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
     }
     else
     {
-
-        string pqc_key = get_pqckey(client_fd);
-        string ecdh_key = PerformECDHKeyExchange(client_fd);
 
         system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
 
@@ -755,12 +751,12 @@ int main(int argc, char *argv[])
 
         // ECDH key exchange
         // Perform ECDH key exchange
-        //string ecdh_key = PerformECDHKeyExchange(client_fd);
+        // string ecdh_key = PerformECDHKeyExchange(client_fd);
         // Establish PQC key
-        //string pqc_key = get_pqckey(client_fd);
+        // string pqc_key = get_pqckey(client_fd);
 
-        //cout << "PQC key: " << pqc_key << endl;
-        // close(client_fd);
+        // cout << "PQC key: " << pqc_key << endl;
+        //  close(client_fd);
 
         // Create UDP connection
         int sockfd = udp_connection(&servaddr, &len, srv_ip);

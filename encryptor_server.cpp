@@ -448,19 +448,18 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     myfile.open("keyID");
     myfile << bufferTCP;
     myfile.close();
-    //convert bufferTCP to string  
+    // convert bufferTCP to string
     std::stringstream bufferTCP_string;
     bufferTCP_string << bufferTCP;
-    
 
     // Obtain QKD key with keyID
     system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
 
     // hash content of bufferTCP with SHAKE128
-        shake128_hash.Update((const byte *)bufferTCP_string.str().c_str(), bufferTCP_string.str().length());
-        std::string pom_param;
-        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
-        qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 108);
+    shake128_hash.Update((const byte *)bufferTCP_string.str().c_str(), bufferTCP_string.str().length());
+    std::string pom_param;
+    shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
+    qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 108);
 }
 
 // Program usage help
@@ -588,11 +587,11 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     tm *ltm = localtime(&now);
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
+    string pqc_key = get_pqckey(new_socket);
+    string ecdh_key = PerformECDHKeyExchange(new_socket);
 
     if (qkd_ip.empty())
     {
-        string pqc_key = get_pqckey(new_socket);
-        string ecdh_key = PerformECDHKeyExchange(new_socket);
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
@@ -619,9 +618,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     }
     else
     {
-
-        string pqc_key = get_pqckey(new_socket);
-        string ecdh_key = PerformECDHKeyExchange(new_socket);
 
         system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
 
@@ -738,9 +734,9 @@ int main(int argc, char *argv[])
         int new_socket = tcp_connection(&server_fd);
 
         // Perform ECDH key exchange
-        //string ecdh_key = PerformECDHKeyExchange(new_socket);
+        // string ecdh_key = PerformECDHKeyExchange(new_socket);
         // Establish PQC key
-        //string pqc_key = get_pqckey(new_socket);
+        // string pqc_key = get_pqckey(new_socket);
 
         cout << "PQC key established \n";
 
