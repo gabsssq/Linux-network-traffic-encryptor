@@ -543,7 +543,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
 
     SecByteBlock key(AES::MAX_KEYLENGTH);
 
-    if (qkd_ip == NULL)
+    if (qkd_ip.empty())
     {
 
 
