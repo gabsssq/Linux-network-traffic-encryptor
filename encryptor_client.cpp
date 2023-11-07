@@ -488,6 +488,10 @@ string PerformECDHKeyExchange(int client_fd)
 
     // Set up the NIST P-521 curve domain
     CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
+    // Generate ECDH keys
+    CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
+    CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
+    dh.GenerateKeyPair(rng, privateKey, publicKey);
 
     CryptoPP::Integer x = dh.GetGroupParameters().GetSubgroupGenerator().x;
     CryptoPP::Integer y = dh.GetGroupParameters().GetSubgroupGenerator().y;
@@ -496,10 +500,6 @@ string PerformECDHKeyExchange(int client_fd)
     string y_str = CryptoPP::IntToString(y);
     string xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
 
-    // Generate ECDH keys
-    CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
-    CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
-    dh.GenerateKeyPair(rng, privateKey, publicKey);
 
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
