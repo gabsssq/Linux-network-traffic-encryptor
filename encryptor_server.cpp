@@ -497,11 +497,13 @@ void help()
 }
 
 // ECDH key exchange
-void PerformECDHKeyExchange()
+void PerformECDHKeyExchange(int new_socket)
 {
     CryptoPP::AutoSeededRandomPool rng;
 
     // Create TCP connection for ECDH key exchange
+    
+    /*
     int ecdh_fd;
 
     int client_fd = tcp_connection(&ecdh_fd);
@@ -511,7 +513,7 @@ void PerformECDHKeyExchange()
         perror("TCP connection error");
         exit(EXIT_FAILURE);
     }
-
+    */
     // Set up the NIST P-521 curve domain
     CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
 
@@ -522,9 +524,9 @@ void PerformECDHKeyExchange()
 
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
+    read(new_socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // Send public key to the server
-    send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
+    send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
@@ -538,7 +540,7 @@ void PerformECDHKeyExchange()
     std::cout << "Hexadecimal representation: " << hex << std::endl;
 
     // Close the socket
-    close(client_fd);
+    //close(client_fd);
 }
 
 int main(int argc, char *argv[])
@@ -586,14 +588,14 @@ int main(int argc, char *argv[])
     while (1)
     {
 
-        // Perform ECDH key exchange
-        PerformECDHKeyExchange();
 
-        shutdown(server_fd, SHUT_RDWR);
+        //shutdown(server_fd, SHUT_RDWR);
 
         // TCP connection create
         int new_socket = tcp_connection(&server_fd);
 
+        // Perform ECDH key exchange
+        PerformECDHKeyExchange(new_socket);
         // Establish PQC key
         string pqc_key = get_pqckey(new_socket);
 
