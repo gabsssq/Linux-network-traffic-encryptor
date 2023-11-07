@@ -596,8 +596,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         string key_two = hmac_hashing(salt, ecdh_key);
         
 
-        string param_one = sha3_hashing(pqc_key, *kyber_cipher_data_str);
-        string param_two = sha3_hashing(ecdh_key, *xy_str);
+        string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
+        string param_two = sha3_hashing(ecdh_key, &xy_str);
         
         string second_round_key_one = hmac_hashing(key_one, param_one + param_two);
         string second_round_key_two = hmac_hashing(key_two, param_one + param_two);
@@ -628,6 +628,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         std::ifstream t("key");
         std::stringstream buffer;
         buffer << t.rdbuf();
+        //buffer to string
+        string buffer_str = buffer.str();
 
        /* std::string message = buffer.str() + pqc_key + ecdh_key;
         hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
@@ -659,11 +661,11 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
-        string key_three = hmac_hashing(salt, buffer);
+        string key_three = hmac_hashing(salt, buffer_string);
 
-        string param_one = sha3_hashing(pqc_key, *kyber_cipher_data_str);
-        string param_two = sha3_hashing(ecdh_key, *xy_str);
-        string param_three = sha3_hashing(buffer, *qkd_parameter);
+        string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
+        string param_two = sha3_hashing(ecdh_key, &xy_str);
+        string param_three = sha3_hashing(buffer_str, &qkd_parameter);
 
         string second_round_key_one = hmac_hashing(key_one, param_two + param_three);
         string second_round_key_two = hmac_hashing(key_two, param_one + param_three);
@@ -683,6 +685,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
         encode_key.MessageEnd();
 
         send(client_fd, output_key.c_str(), output_key.length(), 0);
+        
 
         return key;
     }
