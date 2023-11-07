@@ -479,19 +479,6 @@ string PerformECDHKeyExchange(int new_socket)
 {
     CryptoPP::AutoSeededRandomPool rng;
 
-    // Create TCP connection for ECDH key exchange
-
-    /*
-    int ecdh_fd;
-
-    int client_fd = tcp_connection(&ecdh_fd);
-    // TCP error propagation
-    if (client_fd == -1)
-    {
-        perror("TCP connection error");
-        exit(EXIT_FAILURE);
-    }
-    */
     // Set up the NIST P-521 curve domain
     CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
 

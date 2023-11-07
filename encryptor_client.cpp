@@ -473,16 +473,7 @@ void help()
 
 string PerformECDHKeyExchange(int client_fd)
 {
-    /*close(client_fd);
-
-    // Create TCP connection
-    int custom_connection = tcp_connection(srv_ip);
-    // TCP error propagation
-    if (custom_connection == -1)
-    {
-        perror("TCP connection error");
-        exit(EXIT_FAILURE);
-    }*/
+    
 
     CryptoPP::AutoSeededRandomPool rng;
 
@@ -503,13 +494,9 @@ string PerformECDHKeyExchange(int client_fd)
 
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
-    cout << "Public key sent" << endl;
-    cout << "Public key length: " << publicKey.SizeInBytes() << endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    cout << "Public key received" << endl;
-    cout << "Public key length: " << receivedKey.SizeInBytes() << endl; 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
