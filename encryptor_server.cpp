@@ -597,6 +597,8 @@ int main(int argc, char *argv[])
         // Establish PQC key
         string pqc_key = get_pqckey(new_socket);
 
+        cout << "PQC key established \n";
+
         // UDP connection create
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
