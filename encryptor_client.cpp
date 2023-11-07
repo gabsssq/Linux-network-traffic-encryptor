@@ -493,12 +493,12 @@ string PerformECDHKeyExchange(int client_fd)
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
-    CryptoPP::Integer x = &dh.GetGroupParameters().GetSubgroupGenerator().x;
-    CryptoPP::Integer y = &dh.GetGroupParameters().GetSubgroupGenerator().y;
+    CryptoPP::Integer x = dh.GetGroupParameters().GetSubgroupGenerator().x;
+    CryptoPP::Integer y = dh.GetGroupParameters().GetSubgroupGenerator().y;
     // take first 216 bytes of the x and y coordinates
     string x_str = CryptoPP::IntToString(x);
     string y_str = CryptoPP::IntToString(y);
-    string xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
+    string xy_str = x_str.substr(0, 400) + y_str.substr(0, 400);
 
 
     // Send public key to the server
