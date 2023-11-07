@@ -303,7 +303,7 @@ void thread_encrypt(int sockfd, struct sockaddr_in servaddr, struct sockaddr_in 
    and than send its ID to gateway in server mode.
 */
 
-SecByteBlock rekey_srv(string pqc_key)
+SecByteBlock rekey_srv(string pqc_key, string ecdh_key)
 {
 
     CryptoPP::SHA3_256 hash;
@@ -497,7 +497,7 @@ void help()
 }
 
 // ECDH key exchange
-void PerformECDHKeyExchange(int new_socket)
+string PerformECDHKeyExchange(int new_socket)
 {
     CryptoPP::AutoSeededRandomPool rng;
 
@@ -541,6 +541,8 @@ void PerformECDHKeyExchange(int new_socket)
 
     // Close the socket
     //close(client_fd);
+
+    return hex;
 }
 
 int main(int argc, char *argv[])
@@ -595,7 +597,7 @@ int main(int argc, char *argv[])
         int new_socket = tcp_connection(&server_fd);
 
         // Perform ECDH key exchange
-        PerformECDHKeyExchange(new_socket);
+        string ecdh_key = PerformECDHKeyExchange(new_socket);
         // Establish PQC key
         string pqc_key = get_pqckey(new_socket);
 
@@ -614,7 +616,7 @@ int main(int argc, char *argv[])
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(pqc_key);
+        key = rekey_srv(pqc_key, ecdh_key);
 
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
