@@ -1,4 +1,4 @@
-#include "kyber512_kem.hpp"
+#include <kyber512_kem.hpp>
 #include <thread>
 #include <ctime>
 #include <chrono>
@@ -19,38 +19,63 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <cryptopp/dh.h>
 #define PORT 62000
 #define KEYPORT 61000
 #define MAXLINE 1500
 #define TAG_SIZE 16
 
 #include <iostream>
-using std::cout;
 using std::cerr;
+using std::cout;
 using std::endl;
 
 #include <string>
 using std::string;
 
 #include "cryptopp/hex.h"
-using CryptoPP::HexEncoder;
 using CryptoPP::HexDecoder;
+using CryptoPP::HexEncoder;
+
+#include "cryptopp/osrng.h"
+using CryptoPP::AutoSeededRandomPool;
+
+#include "cryptopp/eccrypto.h"
+using CryptoPP::ECDH;
+using CryptoPP::ECP;
+
+#include "cryptopp/secblock.h"
+using CryptoPP::SecByteBlock;
+
+#include "cryptopp/oids.h"
+using CryptoPP::OID;
+
+// ASN1 is a namespace, not an object
+#include "cryptopp/asn.h"
+using namespace CryptoPP::ASN1;
+
+#include "cryptopp/integer.h"
+using CryptoPP::Integer;
+
+#include "cryptopp/hex.h"
+using CryptoPP::HexDecoder;
+using CryptoPP::HexEncoder;
 
 #include "cryptopp/osrng.h"
 using CryptoPP::AutoSeededRandomPool;
 
 #include "cryptopp/cryptlib.h"
-using CryptoPP::BufferedTransformation;
 using CryptoPP::AuthenticatedSymmetricCipher;
+using CryptoPP::BufferedTransformation;
 using CryptoPP::byte;
 
 #include "cryptopp/filters.h"
+using CryptoPP::AuthenticatedDecryptionFilter;
+using CryptoPP::AuthenticatedEncryptionFilter;
 using CryptoPP::Redirector;
+using CryptoPP::SecByteBlock;
 using CryptoPP::StringSink;
 using CryptoPP::StringSource;
-using CryptoPP::AuthenticatedEncryptionFilter;
-using CryptoPP::AuthenticatedDecryptionFilter;
-using CryptoPP::SecByteBlock;
 
 #include "cryptopp/aes.h"
 using CryptoPP::AES;
@@ -60,8 +85,7 @@ using CryptoPP::GCM;
 
 #include "assert.h"
 
-
-string convertToString(char* a)
+string convertToString(char *a)
 {
     string s = a;
     return s;
@@ -70,134 +94,135 @@ string convertToString(char* a)
 // Virtual interface access
 int tun_open()
 {
-  struct ifreq ifr;
-  int fd, err;
+    struct ifreq ifr;
+    int fd, err;
 
-  if ( (fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK)) == -1 ) {
-       perror("open /dev/net/tun");exit(1);
-  }
-  memset(&ifr, 0, sizeof(ifr));
-  ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
-  strncpy(ifr.ifr_name, "tun0", IFNAMSIZ);
+    if ((fd = open("/dev/net/tun", O_RDWR | O_NONBLOCK)) == -1)
+    {
+        perror("open /dev/net/tun");
+        exit(1);
+    }
+    memset(&ifr, 0, sizeof(ifr));
+    ifr.ifr_flags = IFF_TUN | IFF_NO_PI;
+    strncpy(ifr.ifr_name, "tun0", IFNAMSIZ);
 
-  if ( (err = ioctl(fd, TUNSETIFF, (void *) &ifr)) == -1 ) {
-    perror("ioctl TUNSETIFF");close(fd);exit(1);
-  }
+    if ((err = ioctl(fd, TUNSETIFF, (void *)&ifr)) == -1)
+    {
+        perror("ioctl TUNSETIFF");
+        close(fd);
+        exit(1);
+    }
 
-  return fd;
+    return fd;
 }
-
 
 // Encrypted data recieve
-string data_recieve(int sockfd, struct sockaddr_in servaddr){
+string data_recieve(int sockfd, struct sockaddr_in servaddr)
+{
 
-socklen_t len;
-    char buffer[MAXLINE] = { 0 };
+    socklen_t len;
+    char buffer[MAXLINE] = {0};
     int n;
 
-    n = recvfrom(sockfd, (char *)buffer, MAXLINE, 
-                MSG_WAITALL, (struct sockaddr *) &servaddr,
-                &len);
+    n = recvfrom(sockfd, (char *)buffer, MAXLINE,
+                 MSG_WAITALL, (struct sockaddr *)&servaddr,
+                 &len);
 
-if (n == -1){
-return "";
-}
+    if (n == -1)
+    {
+        return "";
+    }
 
-string recieved(buffer, n);
+    string recieved(buffer, n);
 
-return recieved;
+    return recieved;
 }
 
 // Virtual interface data read
-string read_tun(int tundesc){
+string read_tun(int tundesc)
+{
 
-char buf[MAXLINE-60];
-int nbytes = read(tundesc, buf, sizeof(buf));
-if (nbytes==-1){
-return "";
+    char buf[MAXLINE - 60];
+    int nbytes = read(tundesc, buf, sizeof(buf));
+    if (nbytes == -1)
+    {
+        return "";
+    }
+    string data(buf, nbytes);
+
+    return data;
 }
-string data(buf, nbytes);
-
-return data;
-}
-
 
 /* Virtual interface data write.
    Data will appear as if it arrived at
    virtual interface and can be routed further */
 
-void write_tun(int tundesc, string message){
-char buf[MAXLINE-60];
-memcpy(buf, message.data(), message.length());
-int nbytes = write(tundesc, buf, message.length());
+void write_tun(int tundesc, string message)
+{
+    char buf[MAXLINE - 60];
+    memcpy(buf, message.data(), message.length());
+    int nbytes = write(tundesc, buf, message.length());
 }
-
 
 // Send encrypted data
-void send_encrypted(int sockfd, struct sockaddr_in servaddr, string cipher, socklen_t len){
+void send_encrypted(int sockfd, struct sockaddr_in servaddr, string cipher, socklen_t len)
+{
 
     char *cp = &cipher[0];
-    sendto(sockfd, cp, cipher.length(), MSG_CONFIRM, (const struct sockaddr *) &servaddr, len);
-
+    sendto(sockfd, cp, cipher.length(), MSG_CONFIRM, (const struct sockaddr *)&servaddr, len);
 }
-
 
 // Data encryption
-string encrypt_data(SecByteBlock* key, string message, AutoSeededRandomPool* prng, GCM<AES,CryptoPP::GCM_64K_Tables>::Encryption* e){
-string cipher;
-byte iv[ AES::BLOCKSIZE ];
-(*e).GetNextIV(*prng,iv);
-(*e).SetKeyWithIV(*key, (*key).size(), iv, sizeof(iv));
-
-try
+string encrypt_data(SecByteBlock *key, string message, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption *e)
 {
+    string cipher;
+    byte iv[AES::BLOCKSIZE];
+    (*e).GetNextIV(*prng, iv);
+    (*e).SetKeyWithIV(*key, (*key).size(), iv, sizeof(iv));
 
-    StringSource ss1( message, true,
-        new AuthenticatedEncryptionFilter( *e,
-            new StringSink( cipher ), false, TAG_SIZE
-        )
-    );
+    try
+    {
 
+        StringSource ss1(message, true,
+                         new AuthenticatedEncryptionFilter(*e,
+                                                           new StringSink(cipher), false, TAG_SIZE));
+    }
+    catch (CryptoPP::Exception &ex)
+    {
+        cerr << ex.what() << endl;
+        exit(1);
+    }
+
+    string encrypted((char *)iv, sizeof(iv));
+
+    encrypted += cipher;
+
+    return encrypted;
 }
-catch( CryptoPP::Exception& e )
-{
-    cerr << e.what() << endl;
-   exit(1);
-}
-
-string encrypted((char *)iv, sizeof(iv));
-
-encrypted += cipher;
-
-return encrypted;
-}
-
 
 // Data decryption + integrity check
-string decrypt_data(SecByteBlock* key, string cipher){
+string decrypt_data(SecByteBlock *key, string cipher)
+{
 
-string rpdata;
-byte iv[ AES::BLOCKSIZE ];
-memcpy(iv, cipher.data(), sizeof(iv));
+    string rpdata;
+    byte iv[AES::BLOCKSIZE];
+    memcpy(iv, cipher.data(), sizeof(iv));
 
+    GCM<AES, CryptoPP::GCM_64K_Tables>::Decryption d;
+    d.SetKeyWithIV(*key, sizeof(*key), iv, sizeof(iv));
 
-        GCM<AES,CryptoPP::GCM_64K_Tables>::Decryption d;
-        d.SetKeyWithIV( *key, sizeof(*key), iv, sizeof(iv));
+    AuthenticatedDecryptionFilter df(d,
+                                     new StringSink(rpdata),
+                                     AuthenticatedDecryptionFilter::DEFAULT_FLAGS,
+                                     TAG_SIZE);
 
-        AuthenticatedDecryptionFilter df( d,
-            new StringSink( rpdata ),
-            AuthenticatedDecryptionFilter::DEFAULT_FLAGS,
-            TAG_SIZE
-        );
+    StringSource ss2(cipher.substr(sizeof(iv)), true,
+                     new Redirector(df));
 
-        StringSource ss2( cipher.substr(sizeof(iv)), true,
-            new Redirector( df)
-        );
+    bool b = df.GetLastResult();
+    assert(true == b);
 
-        bool b = df.GetLastResult();
-        assert( true == b );
-
-return rpdata;
+    return rpdata;
 }
 
 /*
@@ -209,22 +234,25 @@ return rpdata;
    Returns false if there are no more data available on socket.
 */
 
-bool D_E_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock* key, int tundesc){
-string data;
-string encrypted_data = data_recieve(sockfd, servaddr);
-if (encrypted_data.length() == 0){
-return false;
-}
-try{
-data = decrypt_data(key, encrypted_data);
-}
-    catch(...)
+bool D_E_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tundesc)
+{
+    string data;
+    string encrypted_data = data_recieve(sockfd, servaddr);
+    if (encrypted_data.length() == 0)
     {
-	return true;
+        return false;
+    }
+    try
+    {
+        data = decrypt_data(key, encrypted_data);
+    }
+    catch (...)
+    {
+        return true;
     }
 
-write_tun(tundesc, data);
-return true;
+    write_tun(tundesc, data);
+    return true;
 }
 
 /*
@@ -236,27 +264,33 @@ return true;
    Returns false if there are no more data available on virtual interface.
 */
 
-bool E_N_C_R (int sockfd, struct sockaddr_in servaddr, SecByteBlock* key, int tundesc, socklen_t len, AutoSeededRandomPool* prng, GCM<AES,CryptoPP::GCM_64K_Tables>::Encryption e){
-string data = read_tun(tundesc);
+bool E_N_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tundesc, socklen_t len, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e)
+{
+    string data = read_tun(tundesc);
 
-if (data.length()==0){
-return false;
-}
-string encrypted_data = encrypt_data(key, data, prng, &e);
-send_encrypted (sockfd, servaddr, encrypted_data, len);
-return true;
+    if (data.length() == 0)
+    {
+        return false;
+    }
+    string encrypted_data = encrypt_data(key, data, prng, &e);
+    send_encrypted(sockfd, servaddr, encrypted_data, len);
+    return true;
 }
 
 // Thread function for both encryption and decryption
-void thread_encrypt (int sockfd, struct sockaddr_in servaddr, SecByteBlock* key, int tundesc, socklen_t len, std::atomic<int>* threads, AutoSeededRandomPool* prng, GCM<AES,CryptoPP::GCM_64K_Tables>::Encryption e){
-for (int i = 0; i < 100; i++){
-while(E_N_C_R (sockfd, servaddr, key, tundesc, len, prng, e)){
-}
+void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tundesc, socklen_t len, std::atomic<int> *threads, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e)
+{
+    for (int i = 0; i < 100; i++)
+    {
+        while (E_N_C_R(sockfd, servaddr, key, tundesc, len, prng, e))
+        {
+        }
 
-while(D_E_C_R (sockfd, servaddr, key, tundesc)){
-}
-}
-*threads += 1;
+        while (D_E_C_R(sockfd, servaddr, key, tundesc))
+        {
+        }
+    }
+    *threads += 1;
 }
 
 /*
@@ -265,51 +299,55 @@ while(D_E_C_R (sockfd, servaddr, key, tundesc)){
    Client get new key from QKD server, combine it with PQC key
    and than send its ID to gateway in server mode.
 */
-SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip){
+SecByteBlock rekey_cli(int client_fd, string pqc_key, string qkd_ip)
+{
 
-CryptoPP::SHA256 hash;
-byte digest[ CryptoPP::SHA256::DIGESTSIZE ];
+    CryptoPP::SHA256 hash;
+    byte digest[CryptoPP::SHA256::DIGESTSIZE];
 
-SecByteBlock key( AES::MAX_KEYLENGTH );
+    SecByteBlock key(AES::MAX_KEYLENGTH);
 
-system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
+    system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
 
-std::ifstream t("key");
-std::stringstream buffer;
-buffer << t.rdbuf();
+    std::ifstream t("key");
+    std::stringstream buffer;
+    buffer << t.rdbuf();
 
-std::string message = buffer.str() + pqc_key;
-hash.CalculateDigest( digest, (byte*) message.c_str(), message.length() );
-CryptoPP::HexEncoder encoder;
-std::string output;
-encoder.Attach( new CryptoPP::StringSink( output ) );
-encoder.Put( digest, sizeof(digest) );
-encoder.MessageEnd();
+    std::string message = buffer.str() + pqc_key;
+    hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
+    CryptoPP::HexEncoder encoder;
+    std::string output;
+    encoder.Attach(new CryptoPP::StringSink(output));
+    encoder.Put(digest, sizeof(digest));
+    encoder.MessageEnd();
 
-int x = 0;
-for (unsigned int i = 0; i < output.length(); i += 2) {
-    std::string bytestring = output.substr(i, 2);
-    key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-    x++;
-}
+    int x = 0;
+    for (unsigned int i = 0; i < output.length(); i += 2)
+    {
+        std::string bytestring = output.substr(i, 2);
+        key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+        x++;
+    }
 
-std::ifstream s("keyID");
-std::stringstream bufferTCP;
-bufferTCP << s.rdbuf();
+    std::ifstream s("keyID");
+    std::stringstream bufferTCP;
+    bufferTCP << s.rdbuf();
 
-send(client_fd, bufferTCP.str().c_str(), bufferTCP.str().length(), 0);
+    send(client_fd, bufferTCP.str().c_str(), bufferTCP.str().length(), 0);
 
-return key;
+    return key;
 }
 
 // TCP socket creation and "Hello" messages exchange
-int tcp_connection (const char* srv_ip){
-int status, client_fd;
+int tcp_connection(const char *srv_ip)
+{
+    int status, client_fd;
     struct sockaddr_in serv_addr;
-    const char* helloTCP = "Hello from client";
-    char buffer[MAXLINE] = { 0 };
+    const char *helloTCP = "Hello from client";
+    char buffer[MAXLINE] = {0};
 
-    if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    {
         printf("\n Socket creation error \n");
         return -1;
     }
@@ -317,260 +355,317 @@ int status, client_fd;
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(KEYPORT);
 
-    if (inet_pton(AF_INET, srv_ip, &serv_addr.sin_addr)
-        <= 0) {
+    if (inet_pton(AF_INET, srv_ip, &serv_addr.sin_addr) <= 0)
+    {
         printf(
             "\nInvalid address/ Address not supported \n");
         return -1;
     }
-cout << "Atempting connection to server \n";
+    cout << "Atempting connection to server \n";
 
-for (int i=1; i < 4; i++){
-	sleep (3);
+    for (int i = 1; i < 4; i++)
+    {
+        sleep(3);
 
-    if ((status
-         = connect(client_fd, (struct sockaddr*)&serv_addr,
-                   sizeof(serv_addr)))
-        < 0) {
+        if ((status = connect(client_fd, (struct sockaddr *)&serv_addr,
+                              sizeof(serv_addr))) < 0)
+        {
 
+            cout << "\nConnection Failed ... Retrying " << i << "/3\n";
+        }
+        else
+        {
+            break;
+        }
 
-cout << "\nConnection Failed ... Retrying " << i << "/3\n";
-
-
+        if (i == 3)
+        {
+            cout << "Can't connect to server... exiting \n";
+            return -1;
+        }
     }
-    else {
-break;
-}
-
-    if (i == 3){
-cout << "Can't connect to server... exiting \n";
-return -1;
-}
-
-
-}
 
     send(client_fd, helloTCP, strlen(helloTCP), 0);
     read(client_fd, buffer, MAXLINE);
-cout << "Connected to server \n";
-return client_fd;
+    cout << "Connected to server \n";
+    return client_fd;
 }
 
 // UDP socket creation and "Hello" messages exchange
-int udp_connection (struct sockaddr_in* pt_servaddr, socklen_t* pt_len, const char* srv_ip){
-int sockfd;
+int udp_connection(struct sockaddr_in *pt_servaddr, socklen_t *pt_len, const char *srv_ip)
+{
+    int sockfd;
     struct sockaddr_in servaddr;
-    char buffer[MAXLINE] = { 0 };
+    char buffer[MAXLINE] = {0};
 
-    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
         perror("socket creation failed");
         exit(EXIT_FAILURE);
     }
     memset(&servaddr, 0, sizeof(servaddr));
-    servaddr.sin_family    = AF_INET;
+    servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = inet_addr(srv_ip);
     servaddr.sin_port = htons(PORT);
 
     socklen_t len;
-  int n;
-const char *hello = "Hello from client";
+    int n;
+    const char *hello = "Hello from client";
 
     sendto(sockfd, (const char *)hello, strlen(hello),
-        MSG_CONFIRM, (const struct sockaddr *) &servaddr,
-            sizeof(servaddr));
-    std::cout<<"Hello message sent."<<std::endl;
+           MSG_CONFIRM, (const struct sockaddr *)&servaddr,
+           sizeof(servaddr));
+    std::cout << "Hello message sent." << std::endl;
 
-  memset(&buffer, 0, sizeof(buffer));
+    memset(&buffer, 0, sizeof(buffer));
     n = recvfrom(sockfd, (char *)buffer, MAXLINE,
-                MSG_WAITALL, (struct sockaddr *) &servaddr,
-                &len);
+                 MSG_WAITALL, (struct sockaddr *)&servaddr,
+                 &len);
     buffer[n] = '\0';
-    std::cout<<"Server: "<<buffer<<std::endl;
+    std::cout << "Server: " << buffer << std::endl;
 
+    // Set socket to NON-blocking mode
+    fcntl(sockfd, F_SETFL, O_NONBLOCK);
 
-// Set socket to NON-blocking mode
-fcntl(sockfd, F_SETFL, O_NONBLOCK);
-
-*pt_servaddr = servaddr;
-*pt_len = len;
-return sockfd;
+    *pt_servaddr = servaddr;
+    *pt_len = len;
+    return sockfd;
 }
 
- // PQC key establishment
-string get_pqckey(int client_fd) {
- constexpr size_t SEED_LEN = 32;
- constexpr size_t KEY_LEN = 32;
+// PQC key establishment
+string get_pqckey(int client_fd)
+{
+    constexpr size_t SEED_LEN = 32;
+    constexpr size_t KEY_LEN = 32;
 
- // Seeds required for keypair generation
- std::vector<uint8_t> _d(SEED_LEN, 0);
- std::vector<uint8_t> _z(SEED_LEN, 0);
+    // Seeds required for keypair generation
+    std::vector<uint8_t> _d(SEED_LEN, 0);
+    std::vector<uint8_t> _z(SEED_LEN, 0);
 
- auto d = std::span<uint8_t, SEED_LEN>(_d);
- auto z = std::span<uint8_t, SEED_LEN>(_z);
+    auto d = std::span<uint8_t, SEED_LEN>(_d);
+    auto z = std::span<uint8_t, SEED_LEN>(_z);
 
- // Public/private keypair
- std::vector<uint8_t> _pkey(kyber512_kem::PKEY_LEN, 0);
- std::vector<uint8_t> _skey(kyber512_kem::SKEY_LEN, 0);
+    // Public/private keypair
+    std::vector<uint8_t> _pkey(kyber512_kem::PKEY_LEN, 0);
+    std::vector<uint8_t> _skey(kyber512_kem::SKEY_LEN, 0);
 
- auto pkey = std::span<uint8_t, kyber512_kem::PKEY_LEN>(_pkey);
- auto skey = std::span<uint8_t, kyber512_kem::SKEY_LEN>(_skey);
+    auto pkey = std::span<uint8_t, kyber512_kem::PKEY_LEN>(_pkey);
+    auto skey = std::span<uint8_t, kyber512_kem::SKEY_LEN>(_skey);
 
- // Seed required for key encapsulation
- std::vector<uint8_t> _m(SEED_LEN, 0);
- auto m = std::span<uint8_t, SEED_LEN>(_m);
+    // Seed required for key encapsulation
+    std::vector<uint8_t> _m(SEED_LEN, 0);
+    auto m = std::span<uint8_t, SEED_LEN>(_m);
 
- // Shared secret that sender/receiver arrives at
- std::vector<uint8_t> _shrd_key(KEY_LEN, 0);
+    // Shared secret that sender/receiver arrives at
+    std::vector<uint8_t> _shrd_key(KEY_LEN, 0);
 
- auto shrd_key = std::span<uint8_t, KEY_LEN>(_shrd_key);
- // Pseudo-randomness source
- prng::prng_t prng_pqc;
+    auto shrd_key = std::span<uint8_t, KEY_LEN>(_shrd_key);
+    // Pseudo-randomness source
+    prng::prng_t prng_pqc;
 
- // Fill up seeds using PRNG
- prng_pqc.read(d);
- prng_pqc.read(z);
+    // Fill up seeds using PRNG
+    prng_pqc.read(d);
+    prng_pqc.read(z);
 
- // Generate a keypair
- kyber512_kem::keygen(d, z, pkey, skey);
+    // Generate a keypair
+    kyber512_kem::keygen(d, z, pkey, skey);
 
- // Fill up seed required for key encapsulation, using PRNG
- prng_pqc.read(m);
+    // Fill up seed required for key encapsulation, using PRNG
+    prng_pqc.read(m);
 
-/*
-   PQC key establishment:
-   Client sends public key to server, from which then receive
-   encapsulated PQC key
-*/
+    /*
+       PQC key establishment:
+       Client sends public key to server, from which then receive
+       encapsulated PQC key
+    */
     std::vector<unsigned char> pqc_buffer(MAXLINE);
     send(client_fd, pkey.data(), pkey.size(), 0);
     read(client_fd, &pqc_buffer[0], MAXLINE);
     std::vector<uint8_t> _cipher(kyber512_kem::CIPHER_LEN, 0);
     _cipher = pqc_buffer;
 
-// Decapsulate cipher text and obtain KDF
+    // Decapsulate cipher text and obtain KDF
     auto cipher = std::span<uint8_t, kyber512_kem::CIPHER_LEN>(_cipher);
-    auto rkdf = kyber512_kem::decapsulate(skey,cipher);
+    auto rkdf = kyber512_kem::decapsulate(skey, cipher);
     rkdf.squeeze(shrd_key);
     string pqc_key = kyber_utils::to_hex(shrd_key);
- 
-   return pqc_key;
-}
 
+    return pqc_key;
+}
 
 // Program usage help
-void help(){
-cout << endl << "   Usage:" << endl << endl;
-cout << "   ./encryptor_client [QKD IP] [Server IP]" << endl;
-cout << "   QKD IP - Local QKD system IP address {x.x.x.x}" << endl;
-cout << "   Server IP - IP address of server gateway {x.x.x.x}" << endl << endl;
+void help()
+{
+    cout << endl
+         << "   Usage:" << endl
+         << endl;
+    cout << "   ./encryptor_client  [Server IP] [QKD IP]" << endl;
+    cout << "   Server IP - IP address of server gateway {x.x.x.x}" << endl;
+    cout << "   QKD IP - Local QKD system IP address {x.x.x.x} (optional)" << endl
+         << endl;
 }
 
-int main(int argc, char* argv[])
+void PerformECDHKeyExchange(int socket)
 {
 
-if (argc < 3){
-help();
-return 0;
+    CryptoPP::AutoSeededRandomPool rng;
+
+    // Set up the NIST P-521 curve domain
+    CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
+
+    // Generate ECDH keys
+    CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
+    CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
+    dh.GenerateKeyPair(rng, privateKey, publicKey);
+
+    // Send public key to the server
+    send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
+
+    // Receive the server's public key
+    CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
+    read(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
+
+    // Derive shared secret
+    CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
+    std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
+
+    string hex;
+    CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);
+    hexEncoder.Put(sharedSecret, sharedSecret.size());
+    hexEncoder.MessageEnd();
+
+    std::cout << "Hexadecimal representation: " << hex << std::endl;
 }
 
-// First argument - QKD server IP address
-string qkd_ip = argv[1];
+int main(int argc, char *argv[])
+{
 
-// Second argument - IP of gateway in server mode
-const char* srv_ip = argv[2];
+    if (argc < 3)
+    {
+        help();
+        return 0;
+    }
 
+    // First argument - IP of gateway in server mode
+    const char *srv_ip = argv[1];
 
-//******** CLIENT MODE: ********//
+    // Second argument - QKD server IP address (optional)
+    string qkd_ip = argv[2];
 
+    //******** CLIENT MODE: ********//
 
+    // Virtual interface access
+    int tundesc;
+    tundesc = tun_open();
 
-// Virtual interface access
-int tundesc;
-tundesc = tun_open();
+    // Variables for UDP connection
+    socklen_t len;
+    struct sockaddr_in servaddr;
 
-// Variables for UDP connection
-socklen_t len;
-struct sockaddr_in servaddr;
+    // AES key variable creation
+    SecByteBlock key(AES::MAX_KEYLENGTH);
 
-// AES key variable creation
-SecByteBlock key( AES::MAX_KEYLENGTH );
+    // Get count of runnable threads (excluding main thread)
+    int threads_max = std::thread::hardware_concurrency() - 1;
+    std::atomic<int> threads_available = threads_max;
 
-// Get count of runnable threads (excluding main thread)
-int threads_max = std::thread::hardware_concurrency()-1;
-std::atomic<int> threads_available = threads_max;
+    GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e;
+    AutoSeededRandomPool prng;
 
+    // Create empty TCP buffer for getting status on TCP connection
+    char bufferTCP[MAXLINE] = {0};
 
-GCM<AES,CryptoPP::GCM_64K_Tables>::Encryption e;
-AutoSeededRandomPool prng;
+    // Time reference variable for rekey purposes
+    time_t ref = time(NULL);
 
-// Create empty TCP buffer for getting status on TCP connection
-char bufferTCP[MAXLINE] = { 0 };
+    // ECDH key exchange
+    // Create TCP connection
 
-// Time reference variable for rekey purposes
-time_t ref = time(NULL);
+    int client_fd = tcp_connection(srv_ip);
+    // TCP error propagation
+    if (client_fd == -1)
+    {
+        return -1;
+    }
 
-while (1){
-int status = -1;
+    // Perform ECDH key exchange
+    PerformECDHKeyExchange(client_fd);
 
-// Create TCP connection
-int client_fd = tcp_connection(srv_ip);
+    // Close the socket
+    close(client_fd);
 
-// TCP error propagation
-if (client_fd == -1){
-return -1;
-}
+    while (1)
+    {
+        int status = -1;
 
-// Establish PQC key
-string pqc_key = get_pqckey(client_fd);
+        // Create TCP connection
+        int client_fd = tcp_connection(srv_ip);
 
-// Create UDP connection
-int sockfd = udp_connection(&servaddr, &len, srv_ip);
+        // TCP error propagation
+        if (client_fd == -1)
+        {
+            return -1;
+        }
 
-// Set TCP socket to non-blocking state
-fcntl(client_fd, F_SETFL, O_NONBLOCK);
+        // Establish PQC key
+        string pqc_key = get_pqckey(client_fd);
 
-while(status != 0){
-// Establish new hybrid key
-key = rekey_cli(client_fd, pqc_key, qkd_ip);
-ref = time(NULL);
+        // Create UDP connection
+        int sockfd = udp_connection(&servaddr, &len, srv_ip);
 
-// Trigger Rekey after some period of time (10 min)
-while (time(NULL)-ref<=600){
+        // Set TCP socket to non-blocking state
+        fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
-// Get TCP connection status
-status = read(client_fd, bufferTCP, MAXLINE);
+        while (status != 0)
+        {
+            // Establish new hybrid key
+            key = rekey_cli(client_fd, pqc_key, qkd_ip);
+            ref = time(NULL);
 
-// If TCP connection is dead, return to TCP connection creation
-if (status == 0) {
-break;
-}
+            // Trigger Rekey after some period of time (10 min)
+            while (time(NULL) - ref <= 600)
+            {
 
-// Create runnable thread if there are data available either on tun interface or UDP socket
-if (E_N_C_R (sockfd, servaddr, &key, tundesc, len, &prng, e) || D_E_C_R (sockfd, servaddr, &key, tundesc)) {
-if (threads_available > 0){
-threads_available -=1;
-std::thread (thread_encrypt, sockfd, servaddr, &key, tundesc, len, &threads_available, &prng, e).detach();
-}
-}
+                // Get TCP connection status
+                status = read(client_fd, bufferTCP, MAXLINE);
 
-// Sleep if no data are available
-if (threads_available == threads_max) {
-std::this_thread::sleep_for(std::chrono::milliseconds(1));
-}
+                // If TCP connection is dead, return to TCP connection creation
+                if (status == 0)
+                {
+                    break;
+                }
 
-// Help with encryption/decryption if all runnable threads are created
-if (threads_available == 0){
-while(E_N_C_R (sockfd, servaddr, &key, tundesc, len, &prng, e)){
-}
+                // Create runnable thread if there are data available either on tun interface or UDP socket
+                if (E_N_C_R(sockfd, servaddr, &key, tundesc, len, &prng, e) || D_E_C_R(sockfd, servaddr, &key, tundesc))
+                {
+                    if (threads_available > 0)
+                    {
+                        threads_available -= 1;
+                        std::thread(thread_encrypt, sockfd, servaddr, &key, tundesc, len, &threads_available, &prng, e).detach();
+                    }
+                }
 
-while(D_E_C_R (sockfd, servaddr, &key, tundesc)){
-}
-}
+                // Sleep if no data are available
+                if (threads_available == threads_max)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
 
-}
-}
-// Clean sockets termination
-close(client_fd);
-close(sockfd);
-}
+                // Help with encryption/decryption if all runnable threads are created
+                if (threads_available == 0)
+                {
+                    while (E_N_C_R(sockfd, servaddr, &key, tundesc, len, &prng, e))
+                    {
+                    }
+
+                    while (D_E_C_R(sockfd, servaddr, &key, tundesc))
+                    {
+                    }
+                }
+            }
+        }
+        // Clean sockets termination
+        close(client_fd);
+        close(sockfd);
+    }
 }
