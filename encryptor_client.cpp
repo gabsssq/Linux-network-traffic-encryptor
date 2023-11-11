@@ -471,7 +471,7 @@ void help()
          << endl;
 }
 
-string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
+string PerformECDHKeyExchange(int client_fd)
 {
 
     // close(client_fd);
@@ -485,14 +485,13 @@ string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
-    
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
-    cout << "Sent key" << publicKey.BytePtr() << endl;
+    cout << "Sent key:" << publicKey.BytePtr() << endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    cout << "Received key" << receivedKey.BytePtr() << endl;
+    cout << "Received key:" << receivedKey.BytePtr() << endl;
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     dh.Agree(sharedSecret, privateKey, receivedKey);
@@ -567,7 +566,7 @@ string xorStrings(const string &str1, const string &str2)
     }
 
     // Result string
-   string result;
+    string result;
 
     // XOR each pair of characters
     for (std::size_t i = 0; i < str1.length(); ++i)
@@ -597,10 +596,11 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
 
+    listen(client_fd, 3);
     string pqc_key = get_pqckey(client_fd);
     cout << "PQC key: " << pqc_key << endl;
     listen(client_fd, 3);
-    string ecdh_key = PerformECDHKeyExchange(client_fd, srv_ip);
+    string ecdh_key = PerformECDHKeyExchange(client_fd);
     cout << "ECDH key: " << ecdh_key << endl;
 
     if (qkd_ip.empty())
@@ -766,12 +766,12 @@ int main(int argc, char *argv[])
 
         // ECDH key exchange
         // Perform ECDH key exchange
-        //string ecdh_key = PerformECDHKeyExchange(client_fd, srv_ip);
+        // string ecdh_key = PerformECDHKeyExchange(client_fd, srv_ip);
         // Establish PQC key
-        //string pqc_key = get_pqckey(client_fd);
+        // string pqc_key = get_pqckey(client_fd);
 
-        //cout << "PQC key: " << pqc_key << endl;
-        //  close(client_fd);
+        // cout << "PQC key: " << pqc_key << endl;
+        //   close(client_fd);
 
         // Create UDP connection
         int sockfd = udp_connection(&servaddr, &len, srv_ip);

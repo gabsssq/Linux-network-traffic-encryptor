@@ -599,11 +599,11 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
 
+    listen(new_socket, 3);
     string pqc_key = get_pqckey(new_socket);
     cout << "PQC key established:" << pqc_key << "\n";
     listen(new_socket, 3);
     string ecdh_key = PerformECDHKeyExchange(new_socket);
-    cout << "ECDH key established \n";
 
     if (qkd_ip.empty())
     {
