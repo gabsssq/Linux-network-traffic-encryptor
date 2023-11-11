@@ -530,7 +530,7 @@ string hmac_hashing(string salt, string key)
 
     // write hmac_digest to string
     CryptoPP::HexEncoder encoder;
-    std::string hmac_output;
+    string hmac_output;
     encoder.Attach(new CryptoPP::StringSink(hmac_output));
     encoder.Put(hmac_digest, sizeof(hmac_digest));
     encoder.MessageEnd();
@@ -549,7 +549,7 @@ string sha3_hashing(string key, string *public_value)
 
     // write digest to string
     CryptoPP::HexEncoder encoder;
-    std::string output;
+    string output;
     encoder.Attach(new CryptoPP::StringSink(output));
     encoder.Put(digest, sizeof(digest));
     encoder.MessageEnd();
@@ -558,7 +558,7 @@ string sha3_hashing(string key, string *public_value)
     return output;
 }
 
-std::string xorStrings(const std::string &str1, const std::string &str2)
+string xorStrings(const string &str1, const string &str2)
 {
     // Ensure the strings have the same length
     if (str1.length() != str2.length())
@@ -567,7 +567,7 @@ std::string xorStrings(const std::string &str1, const std::string &str2)
     }
 
     // Result string
-    std::string result;
+   string result;
 
     // XOR each pair of characters
     for (std::size_t i = 0; i < str1.length(); ++i)
@@ -621,7 +621,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         // hash final key with SHA3_256
         hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
         CryptoPP::HexEncoder encode_key;
-        std::string output_key;
+        string output_key;
         encode_key.Attach(new CryptoPP::StringSink(output_key));
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
@@ -665,7 +665,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
 
         // hash content of bufferTCP with SHAKE128
         shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
-        std::string pom_param;
+        string pom_param;
         shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
         qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
 
@@ -690,7 +690,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         // hash final key with SHA3_256
         hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
         CryptoPP::HexEncoder encode_key;
-        std::string output_key;
+        string output_key;
         encode_key.Attach(new CryptoPP::StringSink(output_key));
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
@@ -698,7 +698,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         int x = 0;
         for (unsigned int i = 0; i < output_key.length(); i += 2)
         {
-            std::string bytestring = output_key.substr(i, 2);
+            string bytestring = output_key.substr(i, 2);
             key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
             x++;
         }
