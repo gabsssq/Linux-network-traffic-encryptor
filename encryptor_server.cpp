@@ -476,8 +476,8 @@ void help()
 // ECDH key exchange
 string PerformECDHKeyExchange(int new_socket, int server_fd)
 {   
-    close(new_socket);
-    new_socket = tcp_connection(&server_fd);
+    //close(new_socket);
+    //new_socket = tcp_connection(&server_fd);
     CryptoPP::AutoSeededRandomPool rng;
 
     // Set up the NIST P-521 curve domain

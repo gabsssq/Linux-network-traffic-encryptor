@@ -474,8 +474,8 @@ void help()
 string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
 {
 
-    close(client_fd);
-    client_fd = tcp_connection(srv_ip);
+    //close(client_fd);
+    //client_fd = tcp_connection(srv_ip);
     CryptoPP::AutoSeededRandomPool rng;
 
     // Set up the NIST P-521 curve domain
