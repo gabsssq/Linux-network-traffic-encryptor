@@ -474,29 +474,24 @@ void help()
 }
 
 // ECDH key exchange
-string PerformECDHKeyExchange(int new_socket, int server_fd)
+string PerformECDHKeyExchange(int socket, int server_fd)
 {
-    // close(new_socket);
-    // new_socket = tcp_connection(&server_fd);
     CryptoPP::AutoSeededRandomPool rng;
 
     // Set up the NIST P-521 curve domain
     CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
+
     // Generate ECDH keys
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
-    cout << "Public key: " << publicKey.BytePtr() << std::endl;
-
-    // Receive the client's public key
+    // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    read(new_socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    cout << "Received key: " << receivedKey.BytePtr() << std::endl;
-    
-    // Send public key to the client
-    send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
-    cout << "Sent key: " << publicKey.BytePtr() << std::endl;
+    read(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
+    // Send public key to the server
+    send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
+
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     dh.Agree(sharedSecret, privateKey, receivedKey);
