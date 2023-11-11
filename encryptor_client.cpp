@@ -474,8 +474,8 @@ void help()
 string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
 {
 
-    //close(client_fd);
-    //client_fd = tcp_connection(srv_ip);
+    // close(client_fd);
+    // client_fd = tcp_connection(srv_ip);
     CryptoPP::AutoSeededRandomPool rng;
 
     // Set up the NIST P-521 curve domain
@@ -484,7 +484,6 @@ string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
-
 
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
@@ -596,7 +595,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     string salt = time + std::to_string(counter);
 
     string pqc_key = get_pqckey(client_fd);
-    
+
     string ecdh_key = PerformECDHKeyExchange(client_fd, srv_ip);
 
     if (qkd_ip.empty())
@@ -691,6 +690,14 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
 
+        int x = 0;
+        for (unsigned int i = 0; i < output_key.length(); i += 2)
+        {
+            std::string bytestring = output_key.substr(i, 2);
+            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
+
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
@@ -754,9 +761,9 @@ int main(int argc, char *argv[])
 
         // ECDH key exchange
         // Perform ECDH key exchange
-        //string ecdh_key = PerformECDHKeyExchange(client_fd);
+        // string ecdh_key = PerformECDHKeyExchange(client_fd);
         // Establish PQC key
-        //string pqc_key = get_pqckey(client_fd);
+        // string pqc_key = get_pqckey(client_fd);
 
         // cout << "PQC key: " << pqc_key << endl;
         //  close(client_fd);

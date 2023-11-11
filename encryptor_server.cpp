@@ -693,14 +693,13 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, int server_fd)
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
 
-         int x = 0;
-    for (unsigned int i = 0; i < output_key.length(); i += 2)
-    {
-        std::string bytestring = output_key.substr(i, 2);
-        key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-        x++;
-    }
-    
+        int x = 0;
+        for (unsigned int i = 0; i < output_key.length(); i += 2)
+        {
+            std::string bytestring = output_key.substr(i, 2);
+            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
