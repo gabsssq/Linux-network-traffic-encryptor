@@ -807,7 +807,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 //get_qkdkey(qkd_ip, bufferTCP);
-                key = rekey_srv(new_socket, qkd_ip, server_fd);
+                key = rekey_srv(new_socket, qkd_ip);
             }
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
