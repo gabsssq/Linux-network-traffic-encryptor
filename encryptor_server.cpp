@@ -474,7 +474,7 @@ void help()
 }
 
 // ECDH key exchange
-string PerformECDHKeyExchange(int socket, int server_fd)
+string PerformECDHKeyExchange(int socket)
 {
     CryptoPP::AutoSeededRandomPool rng;
 
@@ -586,7 +586,7 @@ string xorStrings(const string &str1, const string &str2)
    and than send its ID to gateway in server mode.
 */
 
-SecByteBlock rekey_srv(int new_socket, string qkd_ip, int server_fd)
+SecByteBlock rekey_srv(int new_socket, string qkd_ip)
 {
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
@@ -602,7 +602,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, int server_fd)
     string pqc_key = get_pqckey(new_socket);
     cout << "PQC key established:" << pqc_key << "\n";
 
-    string ecdh_key = PerformECDHKeyExchange(new_socket, server_fd);
+    string ecdh_key = PerformECDHKeyExchange(new_socket);
     cout << "ECDH key established \n";
 
     if (qkd_ip.empty())
@@ -757,9 +757,9 @@ int main(int argc, char *argv[])
         int new_socket = tcp_connection(&server_fd);
 
         // Perform ECDH key exchange
-        string ecdh_key = PerformECDHKeyExchange(new_socket, server_fd);
+        // string ecdh_key = PerformECDHKeyExchange(new_socket);
         // Establish PQC key
-        string pqc_key = get_pqckey(new_socket);
+        // string pqc_key = get_pqckey(new_socket);
 
         cout << "PQC key established \n";
 
@@ -769,22 +769,22 @@ int main(int argc, char *argv[])
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
         read(new_socket, bufferTCP, MAXLINE);
-        get_qkdkey(qkd_ip, bufferTCP);
+        // get_qkdkey(qkd_ip, bufferTCP);
 
-        cout << "QKD keyID recieved \n";
+        
 
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(new_socket, qkd_ip, server_fd);
+        key = rekey_srv(new_socket, qkd_ip);
 
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
 
-        cout << "Key establishment completed \n";
+        
 
         // Return to "waiting on TCP connection" state if TCP connection seems dead
         while (status != 0)
@@ -806,7 +806,7 @@ int main(int argc, char *argv[])
             // Establish new hybrid key, if key_ID is recieved
             if (status > 0)
             {
-                get_qkdkey(qkd_ip, bufferTCP);
+                //get_qkdkey(qkd_ip, bufferTCP);
                 key = rekey_srv(new_socket, qkd_ip, server_fd);
             }
 
