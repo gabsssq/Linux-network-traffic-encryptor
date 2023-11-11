@@ -474,8 +474,10 @@ void help()
 }
 
 // ECDH key exchange
-string PerformECDHKeyExchange(int new_socket)
-{
+string PerformECDHKeyExchange(int new_socket, int server_fd)
+{   
+    close(new_socket);
+    new_socket = tcp_connection(&server_fd);
     CryptoPP::AutoSeededRandomPool rng;
 
     // Set up the NIST P-521 curve domain
@@ -598,9 +600,8 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, int server_fd)
     string salt = time + std::to_string(counter);
 
     string pqc_key = get_pqckey(new_socket);
-    close(new_socket);
-    new_socket = tcp_connection(&server_fd);
-    string ecdh_key = PerformECDHKeyExchange(new_socket);
+    
+    string ecdh_key = PerformECDHKeyExchange(new_socket, server_fd);
     cout << "ECDH key established \n";
 
 

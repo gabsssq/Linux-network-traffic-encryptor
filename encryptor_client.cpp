@@ -471,9 +471,11 @@ void help()
          << endl;
 }
 
-string PerformECDHKeyExchange(int client_fd)
+string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
 {
 
+    close(client_fd);
+    client_fd = tcp_connection(srv_ip);
     CryptoPP::AutoSeededRandomPool rng;
 
     // Set up the NIST P-521 curve domain
@@ -594,9 +596,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     string salt = time + std::to_string(counter);
 
     string pqc_key = get_pqckey(client_fd);
-    close(client_fd);
-    client_fd = tcp_connection(srv_ip);
-    string ecdh_key = PerformECDHKeyExchange(client_fd);
+    
+    string ecdh_key = PerformECDHKeyExchange(client_fd, srv_ip);
 
     if (qkd_ip.empty())
     {
