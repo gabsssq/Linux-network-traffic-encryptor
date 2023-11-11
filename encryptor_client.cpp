@@ -488,9 +488,11 @@ string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
     sleep(5);
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
+    cout << "Sent key" << publicKey.BytePtr() << endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
+    cout << "Received key" << receivedKey.BytePtr() << endl;
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     dh.Agree(sharedSecret, privateKey, receivedKey);
