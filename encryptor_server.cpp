@@ -584,7 +584,7 @@ std::string xorStrings(const std::string &str1, const std::string &str2)
    and than send its ID to gateway in server mode.
 */
 
-SecByteBlock rekey_srv(int new_socket, string qkd_ip)
+SecByteBlock rekey_srv(int new_socket, string qkd_ip, int server_fd)
 {
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
@@ -598,6 +598,8 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     string salt = time + std::to_string(counter);
 
     string pqc_key = get_pqckey(new_socket);
+    close(new_socket);
+    new_socket = tcp_connection(&server_fd);
     string ecdh_key = PerformECDHKeyExchange(new_socket);
     cout << "ECDH key established \n";
 
@@ -767,7 +769,7 @@ int main(int argc, char *argv[])
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(new_socket, qkd_ip);
+        key = rekey_srv(new_socket, qkd_ip, server_fd);
 
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
@@ -796,7 +798,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 //get_qkdkey(qkd_ip, bufferTCP);
-                key = rekey_srv(new_socket, qkd_ip);
+                key = rekey_srv(new_socket, qkd_ip, server_fd);
             }
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
