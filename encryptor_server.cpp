@@ -497,15 +497,27 @@ string PerformECDHKeyExchange(int socket)
     pubEncoder.Put(publicKey, publicKey.size());
     pubEncoder.MessageEnd();
     cout << "Public key: " << pubKey << std::endl;
-    
+
 
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    cout << "Received key: " << receivedKey.BytePtr() << std::endl;
+    //print received key in hex format
+    string recKey;
+    CryptoPP::HexEncoder recEncoder(new CryptoPP::StringSink(recKey), false);
+    recEncoder.Put(receivedKey, receivedKey.size());
+    recEncoder.MessageEnd();
+    cout << "Received key: " << recKey << std::endl;
+
     // Send public key to the server
     send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
-    cout << "Sent key: " << publicKey.BytePtr() << std::endl;
+    //print sent key in hex format
+    string sentKey;
+    CryptoPP::HexEncoder sentEncoder(new CryptoPP::StringSink(sentKey), false);
+    sentEncoder.Put(publicKey, publicKey.size());
+    sentEncoder.MessageEnd();
+    cout << "Sent key: " << sentKey << std::endl;
+    
 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
