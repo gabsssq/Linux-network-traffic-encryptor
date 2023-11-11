@@ -623,6 +623,8 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     tm *ltm = localtime(&now);
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
+    salt = "wBvFh#7QjH8tLpNkRsYx1z3uA2s4Xc6WvBnMlKjIgFhDdSfGhJkLpOeQrTbUyVtXyZaCxwVuNmLkIjHgFdDsAaSdFgHjKlQwErTyUiOp";
+
 
     listen(new_socket, 3);
     string pqc_key = get_pqckey(new_socket);
