@@ -485,7 +485,7 @@ string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
-    sleep(5);
+    
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     cout << "Sent key" << publicKey.BytePtr() << endl;
@@ -766,11 +766,11 @@ int main(int argc, char *argv[])
 
         // ECDH key exchange
         // Perform ECDH key exchange
-        // string ecdh_key = PerformECDHKeyExchange(client_fd);
+        string ecdh_key = PerformECDHKeyExchange(client_fd, srv_ip);
         // Establish PQC key
-        // string pqc_key = get_pqckey(client_fd);
+        string pqc_key = get_pqckey(client_fd);
 
-        // cout << "PQC key: " << pqc_key << endl;
+        cout << "PQC key: " << pqc_key << endl;
         //  close(client_fd);
 
         // Create UDP connection

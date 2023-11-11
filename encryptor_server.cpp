@@ -757,9 +757,9 @@ int main(int argc, char *argv[])
         int new_socket = tcp_connection(&server_fd);
 
         // Perform ECDH key exchange
-        // string ecdh_key = PerformECDHKeyExchange(new_socket);
+        string ecdh_key = PerformECDHKeyExchange(new_socket, server_fd);
         // Establish PQC key
-        // string pqc_key = get_pqckey(new_socket);
+        string pqc_key = get_pqckey(new_socket);
 
         cout << "PQC key established \n";
 
@@ -768,8 +768,8 @@ int main(int argc, char *argv[])
 
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
-        // read(new_socket, bufferTCP, MAXLINE);
-        // get_qkdkey(qkd_ip, bufferTCP);
+        read(new_socket, bufferTCP, MAXLINE);
+        get_qkdkey(qkd_ip, bufferTCP);
 
         cout << "QKD keyID recieved \n";
 
@@ -778,7 +778,7 @@ int main(int argc, char *argv[])
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        //key = rekey_srv(new_socket, qkd_ip, server_fd);
+        key = rekey_srv(new_socket, qkd_ip, server_fd);
 
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
@@ -806,7 +806,7 @@ int main(int argc, char *argv[])
             // Establish new hybrid key, if key_ID is recieved
             if (status > 0)
             {
-                // get_qkdkey(qkd_ip, bufferTCP);
+                get_qkdkey(qkd_ip, bufferTCP);
                 key = rekey_srv(new_socket, qkd_ip, server_fd);
             }
 
