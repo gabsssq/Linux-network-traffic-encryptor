@@ -310,7 +310,7 @@ int tcp_connection(int *pt_server_fd)
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[MAXLINE] = {0};
-    const char *helloTCP = "Hello from server";
+    const char *helloTCP = "Hello from server TCP";
 
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -390,7 +390,7 @@ int udp_connection(struct sockaddr_in *pt_servaddr, struct sockaddr_in *pt_cliad
     int n;
 
     len = sizeof(cliaddr);
-    const char *hello = "Hello from server";
+    const char *hello = "Hello from server UDP";
     n = recvfrom(sockfd, (char *)buffer, MAXLINE,
                  MSG_WAITALL, (struct sockaddr *)&cliaddr,
                  &len);
@@ -761,7 +761,7 @@ int main(int argc, char *argv[])
         // Establish PQC key
         // string pqc_key = get_pqckey(new_socket);
 
-        cout << "PQC key established \n";
+        
 
         // UDP connection create
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);

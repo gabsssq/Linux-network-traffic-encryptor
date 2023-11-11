@@ -305,7 +305,7 @@ int tcp_connection(const char *srv_ip)
 {
     int status, client_fd;
     struct sockaddr_in serv_addr;
-    const char *helloTCP = "Hello from client";
+    const char *helloTCP = "Hello from client TCP";
     char buffer[MAXLINE] = {0};
 
     if ((client_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -372,7 +372,7 @@ int udp_connection(struct sockaddr_in *pt_servaddr, socklen_t *pt_len, const cha
 
     socklen_t len;
     int n;
-    const char *hello = "Hello from client";
+    const char *hello = "Hello from client UDP";
 
     sendto(sockfd, (const char *)hello, strlen(hello),
            MSG_CONFIRM, (const struct sockaddr *)&servaddr,
