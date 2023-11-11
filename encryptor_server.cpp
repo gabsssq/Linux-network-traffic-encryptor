@@ -498,7 +498,6 @@ string PerformECDHKeyExchange(int socket)
     pubEncoder.MessageEnd();
     cout << "Public key: " << pubKey << std::endl;
 
-    listen(socket, 2);
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
@@ -790,8 +789,8 @@ int main(int argc, char *argv[])
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
         // QKD keyID receive
-        char bufferTCP[MAXLINE] = {0};
-        read(new_socket, bufferTCP, MAXLINE);
+        //char bufferTCP[MAXLINE] = {0};
+        //read(new_socket, bufferTCP, MAXLINE);
         // get_qkdkey(qkd_ip, bufferTCP);
 
         //******** KEY ESTABLISHMENT: ********//
