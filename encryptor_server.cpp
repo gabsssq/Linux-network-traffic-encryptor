@@ -495,7 +495,7 @@ string PerformECDHKeyExchange(int new_socket)
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(new_socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    
+
     // Send public key to the server
     send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // Derive shared secret
@@ -743,9 +743,9 @@ int main(int argc, char *argv[])
         int new_socket = tcp_connection(&server_fd);
 
         // Perform ECDH key exchange
-        string ecdh_key = PerformECDHKeyExchange(new_socket);
+        //string ecdh_key = PerformECDHKeyExchange(new_socket);
         // Establish PQC key
-        string pqc_key = get_pqckey(new_socket);
+        //string pqc_key = get_pqckey(new_socket);
 
         cout << "PQC key established \n";
 
@@ -753,9 +753,9 @@ int main(int argc, char *argv[])
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
         // QKD keyID receive
-        char bufferTCP[MAXLINE] = {0};
-        read(new_socket, bufferTCP, MAXLINE);
-        get_qkdkey(qkd_ip, bufferTCP);
+        //char bufferTCP[MAXLINE] = {0};
+        //read(new_socket, bufferTCP, MAXLINE);
+        //get_qkdkey(qkd_ip, bufferTCP);
 
         cout << "QKD keyID recieved \n";
 

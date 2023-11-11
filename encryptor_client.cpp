@@ -751,9 +751,9 @@ int main(int argc, char *argv[])
 
         // ECDH key exchange
         // Perform ECDH key exchange
-        string ecdh_key = PerformECDHKeyExchange(client_fd);
+        //string ecdh_key = PerformECDHKeyExchange(client_fd);
         // Establish PQC key
-        string pqc_key = get_pqckey(client_fd);
+        //string pqc_key = get_pqckey(client_fd);
 
         // cout << "PQC key: " << pqc_key << endl;
         //  close(client_fd);
