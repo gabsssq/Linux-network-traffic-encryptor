@@ -753,7 +753,7 @@ int main(int argc, char *argv[])
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
         // QKD keyID receive
-        //char bufferTCP[MAXLINE] = {0};
+        char bufferTCP[MAXLINE] = {0};
         //read(new_socket, bufferTCP, MAXLINE);
         //get_qkdkey(qkd_ip, bufferTCP);
 
