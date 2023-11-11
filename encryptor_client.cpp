@@ -530,7 +530,7 @@ string PerformECDHKeyExchange(int client_fd)
     // take first 216 bytes of the x and y coordinates
     string x_str = CryptoPP::IntToString(x);
     string y_str = CryptoPP::IntToString(y);
-    xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
+    xy_str = x_str.substr(0, 216) + y_str.substr(0, 216);
     /*
     // Close the socket
     close(custom_connection);
@@ -688,8 +688,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         // hash content of bufferTCP with SHAKE128
         shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
         string pom_param;
-        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
-        qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
+        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
+        qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);

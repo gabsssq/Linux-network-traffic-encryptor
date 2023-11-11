@@ -458,8 +458,8 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     // hash content of bufferTCP with SHAKE128
     shake128_hash.Update((const byte *)bufferTCP_string.str().c_str(), bufferTCP_string.str().length());
     string pom_param;
-    shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
-    qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 108);
+    shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
+    qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 216);
 }
 
 // Program usage help
@@ -534,7 +534,7 @@ string PerformECDHKeyExchange(int socket)
     // take first 216 bytes of the x and y coordinates
     string x_str = CryptoPP::IntToString(x);
     string y_str = CryptoPP::IntToString(y);
-    xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
+    xy_str = x_str.substr(0, 216) + y_str.substr(0, 216);
 
     /*
     // Close the socket
@@ -691,8 +691,8 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         // hash content of bufferTCP with SHAKE128
         shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
         string pom_param;
-        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 108);
-        qkd_parameter = pom_param + bufferTCP.str().substr(0, 108);
+        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
+        qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
