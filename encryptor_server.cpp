@@ -485,24 +485,24 @@ string PerformECDHKeyExchange(int socket)
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
-    //print private and public key in hex format
+    // print private and public key in hex format
     string privKey;
     CryptoPP::HexEncoder privEncoder(new CryptoPP::StringSink(privKey), false);
     privEncoder.Put(privateKey, privateKey.size());
     privEncoder.MessageEnd();
     cout << "Private key: " << privKey << std::endl;
-    
+
     string pubKey;
     CryptoPP::HexEncoder pubEncoder(new CryptoPP::StringSink(pubKey), false);
     pubEncoder.Put(publicKey, publicKey.size());
     pubEncoder.MessageEnd();
     cout << "Public key: " << pubKey << std::endl;
 
-
+    listen(socket, 2);
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    //print received key in hex format
+    // print received key in hex format
     string recKey;
     CryptoPP::HexEncoder recEncoder(new CryptoPP::StringSink(recKey), false);
     recEncoder.Put(receivedKey, receivedKey.size());
@@ -511,13 +511,12 @@ string PerformECDHKeyExchange(int socket)
 
     // Send public key to the server
     send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
-    //print sent key in hex format
+    // print sent key in hex format
     string sentKey;
     CryptoPP::HexEncoder sentEncoder(new CryptoPP::StringSink(sentKey), false);
     sentEncoder.Put(publicKey, publicKey.size());
     sentEncoder.MessageEnd();
     cout << "Sent key: " << sentKey << std::endl;
-
 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
@@ -624,7 +623,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
     salt = "wBvFh#7QjH8tLpNkRsYx1z3uA2s4Xc6WvBnMlKjIgFhDdSfGhJkLpOeQrTbUyVtXyZaCxwVuNmLkIjHgFdDsAaSdFgHjKlQwErTyUiOp";
-
 
     string pqc_key = get_pqckey(new_socket);
     cout << "PQC key established:" << pqc_key << "\n";
@@ -788,8 +786,6 @@ int main(int argc, char *argv[])
         // Establish PQC key
         // string pqc_key = get_pqckey(new_socket);
 
-        
-
         // UDP connection create
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
@@ -797,8 +793,6 @@ int main(int argc, char *argv[])
         char bufferTCP[MAXLINE] = {0};
         read(new_socket, bufferTCP, MAXLINE);
         // get_qkdkey(qkd_ip, bufferTCP);
-
-        
 
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
@@ -810,8 +804,6 @@ int main(int argc, char *argv[])
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
-
-        
 
         // Return to "waiting on TCP connection" state if TCP connection seems dead
         while (status != 0)
@@ -833,7 +825,7 @@ int main(int argc, char *argv[])
             // Establish new hybrid key, if key_ID is recieved
             if (status > 0)
             {
-                //get_qkdkey(qkd_ip, bufferTCP);
+                // get_qkdkey(qkd_ip, bufferTCP);
                 key = rekey_srv(new_socket, qkd_ip);
             }
 

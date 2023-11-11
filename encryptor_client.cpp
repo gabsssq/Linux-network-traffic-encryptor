@@ -489,17 +489,16 @@ string PerformECDHKeyExchange(int client_fd)
     privEncoder.Put(privateKey, privateKey.size());
     privEncoder.MessageEnd();
     cout << "Private key: " << privKey << std::endl;
-    
+
     string pubKey;
     CryptoPP::HexEncoder pubEncoder(new CryptoPP::StringSink(pubKey), false);
     pubEncoder.Put(publicKey, publicKey.size());
     pubEncoder.MessageEnd();
     cout << "Public key: " << pubKey << std::endl;
 
-
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
-   //print sent key in hex format
+    // print sent key in hex format
     string sentKey;
     CryptoPP::HexEncoder sentEncoder(new CryptoPP::StringSink(sentKey), false);
     sentEncoder.Put(publicKey, publicKey.size());
@@ -507,8 +506,9 @@ string PerformECDHKeyExchange(int client_fd)
     cout << "Sent key: " << sentKey << std::endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
+    listen(client_fd, 2);
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    //print received key in hex format
+    // print received key in hex format
     string recKey;
     CryptoPP::HexEncoder recEncoder(new CryptoPP::StringSink(recKey), false);
     recEncoder.Put(receivedKey, receivedKey.size());
