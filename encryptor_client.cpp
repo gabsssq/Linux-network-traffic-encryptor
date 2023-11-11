@@ -493,7 +493,7 @@ string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
-    cout << dh.Agree(sharedSecret, privateKey, receivedKey);
+    dh.Agree(sharedSecret, privateKey, receivedKey);
 
     string hex;
     CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);

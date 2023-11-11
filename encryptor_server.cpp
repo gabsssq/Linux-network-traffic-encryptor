@@ -496,6 +496,7 @@ string PerformECDHKeyExchange(int new_socket, int server_fd)
     send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
+    dh.Agree(sharedSecret, privateKey, receivedKey);
     
 
     string hex;
