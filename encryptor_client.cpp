@@ -727,6 +727,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
 
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 
+        cout << "Key established: " << output_key << endl;
+
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
     }

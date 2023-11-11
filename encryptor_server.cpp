@@ -517,7 +517,7 @@ string PerformECDHKeyExchange(int socket)
     sentEncoder.Put(publicKey, publicKey.size());
     sentEncoder.MessageEnd();
     cout << "Sent key: " << sentKey << std::endl;
-    
+
 
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
@@ -727,6 +727,8 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
             key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
             x++;
         }
+
+        cout << "Key established:" << output_key << "\n";
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
