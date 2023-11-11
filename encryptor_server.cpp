@@ -500,7 +500,7 @@ string PerformECDHKeyExchange(int new_socket)
     send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
-    std::cout << dh.Agree(sharedSecret, privateKey, receivedKey) << std::endl;
+    
 
     string hex;
     CryptoPP::HexEncoder hexEncoder(new CryptoPP::StringSink(hex), false);
@@ -596,8 +596,11 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     tm *ltm = localtime(&now);
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
+    
     string pqc_key = get_pqckey(new_socket);
     string ecdh_key = PerformECDHKeyExchange(new_socket);
+    cout << "ECDH key established \n";
+
 
     if (qkd_ip.empty())
     {
