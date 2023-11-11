@@ -31,7 +31,7 @@ using std::cout;
 using std::endl;
 
 #include <string>
-using std::string;
+using string;
 
 #include "cryptopp/hex.h"
 using CryptoPP::HexDecoder;
