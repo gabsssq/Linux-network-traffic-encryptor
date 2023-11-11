@@ -598,7 +598,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     string pqc_key = get_pqckey(client_fd);
     cout << "PQC key: " << pqc_key << endl;
 
-    string ecdh_key = PerformECDHKeyExchange(&client_fd, srv_ip);
+    string ecdh_key = PerformECDHKeyExchange(client_fd, srv_ip);
     cout << "ECDH key: " << ecdh_key << endl;
 
     if (qkd_ip.empty())
