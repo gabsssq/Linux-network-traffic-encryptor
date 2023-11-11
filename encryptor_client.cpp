@@ -484,6 +484,9 @@ string PerformECDHKeyExchange(int client_fd)
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
+    cout << "Private key:" << privateKey.BytePtr() << endl;
+    cout << "Public key:" << publicKey.BytePtr() << endl;
+    
 
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);

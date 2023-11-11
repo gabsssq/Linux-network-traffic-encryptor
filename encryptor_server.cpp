@@ -485,6 +485,8 @@ string PerformECDHKeyExchange(int socket)
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
+    cout << "Private key: " << privateKey.BytePtr() << std::endl;
+    cout << "Public key: " << publicKey.BytePtr() << std::endl;
 
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
