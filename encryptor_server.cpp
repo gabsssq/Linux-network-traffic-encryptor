@@ -600,6 +600,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, int server_fd)
     string salt = time + std::to_string(counter);
 
     string pqc_key = get_pqckey(new_socket);
+    cout << "PQC key established:" << pqc_key << "\n";
 
     string ecdh_key = PerformECDHKeyExchange(new_socket, server_fd);
     cout << "ECDH key established \n";
