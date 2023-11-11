@@ -580,7 +580,7 @@ std::string xorStrings(const std::string &str1, const std::string &str2)
    Client get new key from QKD server, combine it with PQC key
    and than send its ID to gateway in server mode.
 */
-SecByteBlock rekey_cli(int client_fd, string qkd_ip)
+SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
 {
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
@@ -594,6 +594,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip)
     string salt = time + std::to_string(counter);
 
     string pqc_key = get_pqckey(client_fd);
+    close(client_fd);
+    client_fd = tcp_connection(srv_ip);
     string ecdh_key = PerformECDHKeyExchange(client_fd);
 
     if (qkd_ip.empty())
@@ -769,7 +771,7 @@ int main(int argc, char *argv[])
         while (status != 0)
         {
             // Establish new hybrid key
-            key = rekey_cli(client_fd, qkd_ip);
+            key = rekey_cli(client_fd, qkd_ip, srv_ip);
             ref = time(NULL);
 
             cout << "New key established" << endl;
