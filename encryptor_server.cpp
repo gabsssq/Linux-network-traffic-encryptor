@@ -792,7 +792,7 @@ int main(int argc, char *argv[])
             // Establish new hybrid key, if key_ID is recieved
             if (status > 0)
             {
-                get_qkdkey(qkd_ip, bufferTCP);
+                //get_qkdkey(qkd_ip, bufferTCP);
                 key = rekey_srv(new_socket, qkd_ip);
             }
 
