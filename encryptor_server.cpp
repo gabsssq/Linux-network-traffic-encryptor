@@ -490,8 +490,7 @@ string PerformECDHKeyExchange(int new_socket, int server_fd)
     // Receive the client's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(new_socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
-    //sleep for 3 seconds
-    sleep(3);
+    
     // Send public key to the client
     send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // Derive shared secret

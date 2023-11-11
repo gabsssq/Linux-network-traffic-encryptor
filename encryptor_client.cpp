@@ -485,6 +485,7 @@ string PerformECDHKeyExchange(int client_fd, const char *srv_ip)
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
+    sleep(5);
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // Receive the server's public key
