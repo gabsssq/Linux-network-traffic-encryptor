@@ -485,18 +485,12 @@ string PerformECDHKeyExchange(int new_socket)
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
 
-    CryptoPP::Integer x = dh.GetGroupParameters().GetSubgroupGenerator().x;
-    CryptoPP::Integer y = dh.GetGroupParameters().GetSubgroupGenerator().y;
-    // take first 216 bytes of the x and y coordinates
-    string x_str = CryptoPP::IntToString(x);
-    string y_str = CryptoPP::IntToString(y);
-    xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
 
-    // Receive the server's public key
+    // Receive the client's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(new_socket, receivedKey.BytePtr(), receivedKey.SizeInBytes());
 
-    // Send public key to the server
+    // Send public key to the client
     send(new_socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
@@ -508,6 +502,12 @@ string PerformECDHKeyExchange(int new_socket)
     hexEncoder.MessageEnd();
 
     std::cout << "Hexadecimal representation: " << hex << std::endl;
+    CryptoPP::Integer x = dh.GetGroupParameters().GetSubgroupGenerator().x;
+    CryptoPP::Integer y = dh.GetGroupParameters().GetSubgroupGenerator().y;
+    // take first 216 bytes of the x and y coordinates
+    string x_str = CryptoPP::IntToString(x);
+    string y_str = CryptoPP::IntToString(y);
+    xy_str = x_str.substr(0, 108) + y_str.substr(0, 108);
 
     /*
     // Close the socket
@@ -596,7 +596,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     tm *ltm = localtime(&now);
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
-    
+
     string pqc_key = get_pqckey(new_socket);
     string ecdh_key = PerformECDHKeyExchange(new_socket);
     cout << "ECDH key established \n";
