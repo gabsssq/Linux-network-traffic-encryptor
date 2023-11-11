@@ -619,10 +619,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     string salt = time + std::to_string(counter);
     salt = "wBvFh#7QjH8tLpNkRsYx1z3uA2s4Xc6WvBnMlKjIgFhDdSfGhJkLpOeQrTbUyVtXyZaCxwVuNmLkIjHgFdDsAaSdFgHjKlQwErTyUiOpAsDfGhJkLpOeRtYuIwQeRtYuI";
 
-    listen(client_fd, 3);
     string pqc_key = get_pqckey(client_fd);
     cout << "PQC key: " << pqc_key << endl;
-    listen(client_fd, 3);
     string ecdh_key = PerformECDHKeyExchange(client_fd);
     cout << "ECDH key: " << ecdh_key << endl;
 
