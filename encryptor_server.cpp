@@ -428,6 +428,7 @@ string get_pqckey(int new_socket)
     */
     std::vector<unsigned char> pqc_buffer(MAXLINE);
     read(new_socket, &pqc_buffer[0], MAXLINE);
+    cout << "PQC key recieved: " << pqc_buffer.data() << "\n";
 
     std::vector<uint8_t> _pkey(kyber512_kem::PKEY_LEN, 0);
     _pkey = pqc_buffer;
@@ -438,6 +439,7 @@ string get_pqckey(int new_socket)
 
     string pqc_key = kyber_utils::to_hex(shrd_key);
     send(new_socket, cipher.data(), cipher.size(), 0);
+    cout << "PQC key send: " << pqc_key << "\n";
     return pqc_key;
 }
 

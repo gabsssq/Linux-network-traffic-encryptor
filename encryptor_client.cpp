@@ -442,7 +442,9 @@ string get_pqckey(int client_fd)
     */
     std::vector<unsigned char> pqc_buffer(MAXLINE);
     send(client_fd, pkey.data(), pkey.size(), 0);
+    cout << "PQC public key: " << kyber_utils::to_hex(pkey) << endl;
     read(client_fd, &pqc_buffer[0], MAXLINE);
+    cout << "PQC encapsulated key: " << kyber_utils::to_hex(pqc_buffer) << endl;
     std::vector<uint8_t> _cipher(kyber512_kem::CIPHER_LEN, 0);
     _cipher = pqc_buffer;
 
