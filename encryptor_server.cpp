@@ -510,7 +510,6 @@ string PerformECDHKeyExchange(int socket)
     recEncoder.Put(receivedKey, receivedKey.size());
     recEncoder.MessageEnd();
     cout << "Received key: " << recKey << std::endl;
-    listen(socket, 1);
     // Send public key to the server
     send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // print sent key in hex format
@@ -801,7 +800,7 @@ int main(int argc, char *argv[])
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        //key = rekey_srv(new_socket, qkd_ip);
+        key = rekey_srv(new_socket, qkd_ip);
 
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
@@ -828,7 +827,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 // get_qkdkey(qkd_ip, bufferTCP);
-                key = rekey_srv(new_socket, qkd_ip);
+                //key = rekey_srv(new_socket, qkd_ip);
             }
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
