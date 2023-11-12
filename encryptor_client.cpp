@@ -509,12 +509,8 @@ string PerformECDHKeyExchange(int client_fd)
     cout << "Sent key: " << sentKey << std::endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    CryptoPP::SecByteBlock dump(1013);
-    for (size_t i = 0; i < 1013; i++)
-    {
+    CryptoPP::SecByteBlock dump(834);
     read(client_fd, dump, dump.SizeInBytes());
-        /* code */
-    }
     
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // print received key in hex format
