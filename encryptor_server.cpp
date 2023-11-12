@@ -801,7 +801,7 @@ int main(int argc, char *argv[])
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(new_socket, qkd_ip);
+        //key = rekey_srv(new_socket, qkd_ip);
 
         // Set TCP socket to NON-blocking mode
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
