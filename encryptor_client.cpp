@@ -510,6 +510,7 @@ string PerformECDHKeyExchange(int client_fd)
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
+    read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // print received key in hex format
     string recKey;
     CryptoPP::HexEncoder recEncoder(new CryptoPP::StringSink(recKey), false);
