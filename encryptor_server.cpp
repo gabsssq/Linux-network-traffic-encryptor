@@ -627,6 +627,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
 
     string pqc_key = get_pqckey(new_socket);
     cout << "PQC key established:" << pqc_key << "\n";
+    listen(new_socket, 3);
     string ecdh_key = PerformECDHKeyExchange(new_socket);
 
     if (qkd_ip.empty())

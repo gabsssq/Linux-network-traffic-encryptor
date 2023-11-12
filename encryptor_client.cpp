@@ -509,7 +509,6 @@ string PerformECDHKeyExchange(int client_fd)
     cout << "Sent key: " << sentKey << std::endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    recv(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes(), 0);
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // print received key in hex format
     string recKey;
@@ -624,6 +623,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
 
     string pqc_key = get_pqckey(client_fd);
     cout << "PQC key: " << pqc_key << endl;
+    listen(client_fd, 3);
     string ecdh_key = PerformECDHKeyExchange(client_fd);
     cout << "ECDH key: " << ecdh_key << endl;
 
