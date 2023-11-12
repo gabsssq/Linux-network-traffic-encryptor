@@ -488,6 +488,7 @@ string PerformECDHKeyExchange(int socket)
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
     // print private and public key in hex format
+    listen(socket, 1);
     string privKey;
     CryptoPP::HexEncoder privEncoder(new CryptoPP::StringSink(privKey), false);
     privEncoder.Put(privateKey, privateKey.size());
