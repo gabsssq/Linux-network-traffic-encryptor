@@ -486,12 +486,12 @@ string PerformECDHKeyExchange(int client_fd)
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
     dh.GenerateKeyPair(rng, privateKey, publicKey);
+    listen(client_fd, 1);
     string privKey;
     CryptoPP::HexEncoder privEncoder(new CryptoPP::StringSink(privKey), false);
     privEncoder.Put(privateKey, privateKey.size());
     privEncoder.MessageEnd();
     cout << "Private key: " << privKey << std::endl;
-
     string pubKey;
     CryptoPP::HexEncoder pubEncoder(new CryptoPP::StringSink(pubKey), false);
     pubEncoder.Put(publicKey, publicKey.size());
