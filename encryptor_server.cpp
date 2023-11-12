@@ -439,7 +439,7 @@ string get_pqckey(int new_socket)
 
     string pqc_key = kyber_utils::to_hex(shrd_key);
     send(new_socket, cipher.data(), cipher.size(), 0);
-    cout << "PQC key send: " << pqc_key << "\n";
+    cout << "PQC key send: " << cipher.data() << "\n";
     return pqc_key;
 }
 
