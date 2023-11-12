@@ -510,7 +510,7 @@ string PerformECDHKeyExchange(int socket)
     recEncoder.Put(receivedKey, receivedKey.size());
     recEncoder.MessageEnd();
     cout << "Received key: " << recKey << std::endl;
-
+    listen(socket, 1);
     // Send public key to the server
     send(socket, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // print sent key in hex format
