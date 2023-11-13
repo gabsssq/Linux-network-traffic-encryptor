@@ -632,8 +632,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     listen(new_socket, 3);
     string ecdh_key = PerformECDHKeyExchange(new_socket);
 
-    if (qkd_ip = "0")
-    {
+    if (qkd_ip.length() == 0)
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
