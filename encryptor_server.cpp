@@ -665,6 +665,11 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
             x++;
         }
 
+        // output kyber cipher data, xy coordinates and qkd parameter
+        cout << "Kyber cipher data: " << kyber_cipher_data_str << endl;
+        cout << "XY coordinates: " << xy_str << endl;
+        cout << "QKD parameter: " << qkd_parameter << endl;
+
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
     }

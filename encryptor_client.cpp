@@ -660,6 +660,10 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
             x++;
         }
 
+        cout << "Kyber cipher data: " << kyber_cipher_data_str << endl;
+        cout << "XY coordinates: " << xy_str << endl;
+        cout << "QKD parameter: " << qkd_parameter << endl;
+
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
@@ -805,6 +809,7 @@ int main(int argc, char *argv[])
         while (status != 0)
         {
             // Establish new hybrid key
+            fcntl(client_fd, F_SETFL, 0);
             key = rekey_cli(client_fd, qkd_ip, srv_ip);
             ref = time(NULL);
             fcntl(client_fd, F_SETFL, O_NONBLOCK);
