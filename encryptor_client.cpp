@@ -629,7 +629,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     string ecdh_key = PerformECDHKeyExchange(client_fd);
     cout << "ECDH key: " << ecdh_key << endl;
 
-    if (qkd_ip.equals("0"))
+    if (qkd_ip.empty())
     {
 
         // all parameters set, starting to creating hybrid key
@@ -736,8 +736,15 @@ int main(int argc, char *argv[])
     const char *srv_ip = argv[1];
 
     // Second argument - QKD server IP address (optional)
-    string qkd_ip = argv[2];
-
+    // First argument - QKD server IP address
+    if (argv[2] == NULL)
+    {
+        string qkd_ip = "";
+    }
+    else
+    {
+        string qkd_ip = argv[2];
+    }
     //******** CLIENT MODE: ********//
 
     // Virtual interface access
