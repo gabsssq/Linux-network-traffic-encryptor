@@ -428,11 +428,9 @@ string get_pqckey(int new_socket)
     */
     std::vector<unsigned char> pqc_buffer(MAXLINE);
     read(new_socket, &pqc_buffer[0], MAXLINE);
-    //read pqc buffer as string
+    // read pqc buffer as string
     string pqc_string = convertToString((char *)&pqc_buffer[0]);
     cout << "PQC key recieved: " << pqc_string << "\n";
-
-
 
     std::vector<uint8_t> _pkey(kyber512_kem::PKEY_LEN, 0);
     _pkey = pqc_buffer;
@@ -443,7 +441,7 @@ string get_pqckey(int new_socket)
 
     string pqc_key = kyber_utils::to_hex(shrd_key);
     send(new_socket, cipher.data(), cipher.size(), 0);
-    //convert cipher to string
+    // convert cipher to string
     string cipher_string = convertToString((char *)&cipher[0]);
     cout << "PQC key send: " << cipher_string << "\n";
     return pqc_key;
@@ -665,7 +663,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     else
     {
 
-
         std::ifstream t("key");
         std::stringstream buffer;
         buffer << t.rdbuf();
@@ -782,18 +779,16 @@ int main(int argc, char *argv[])
 
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
-        //read(new_socket, bufferTCP, MAXLINE);
-        // get_qkdkey(qkd_ip, bufferTCP);
+        // read(new_socket, bufferTCP, MAXLINE);
+        //  get_qkdkey(qkd_ip, bufferTCP);
 
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(new_socket, qkd_ip);
+        // key = rekey_srv(new_socket, qkd_ip);
 
-        // Set TCP socket to NON-blocking mode
-        fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
 
         // Return to "waiting on TCP connection" state if TCP connection seems dead
@@ -818,6 +813,8 @@ int main(int argc, char *argv[])
             {
                 // get_qkdkey(qkd_ip, bufferTCP);
                 key = rekey_srv(new_socket, qkd_ip);
+                // Set TCP socket to NON-blocking mode
+                fcntl(new_socket, F_SETFL, O_NONBLOCK);
             }
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
