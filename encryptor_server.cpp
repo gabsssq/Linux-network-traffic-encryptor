@@ -638,15 +638,22 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
+        cout << "Key one: " << key_one << endl;
         string key_two = hmac_hashing(salt, ecdh_key);
+        cout << "Key two: " << key_two << endl;
 
         string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
+        cout << "Param one: " << param_one << endl;
         string param_two = sha3_hashing(ecdh_key, &xy_str);
+        cout << "Param two: " << param_two << endl;
 
         string second_round_key_one = hmac_hashing(key_one, param_one + param_two);
+        cout << "Second round key one: " << second_round_key_one << endl;
         string second_round_key_two = hmac_hashing(key_two, param_one + param_two);
+        cout << "Second round key two: " << second_round_key_two << endl;
 
         string key = xorStrings(second_round_key_one, second_round_key_two);
+        cout << "Key: " << key << endl;
 
         // hash final key with SHA3_256
         hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
