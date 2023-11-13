@@ -816,6 +816,9 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 // get_qkdkey(qkd_ip, bufferTCP);
+                //restart socket
+                close(new_socket);
+                new_socket = tcp_connection(&server_fd);
                 key = rekey_srv(new_socket, qkd_ip);
                 // Set TCP socket to NON-blocking mode
             }
