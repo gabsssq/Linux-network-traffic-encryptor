@@ -662,7 +662,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
 
         cout << "Kyber cipher data: " << kyber_cipher_data_str << endl;
         cout << "XY coordinates: " << xy_str << endl;
-        cout << "QKD parameter: " << qkd_parameter << endl;
+        
 
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 

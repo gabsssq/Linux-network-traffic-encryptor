@@ -440,8 +440,9 @@ string get_pqckey(int new_socket)
 
     string pqc_key = kyber_utils::to_hex(shrd_key);
     send(new_socket, cipher.data(), cipher.size(), 0);
-    // convert cipher to string
-    string cipher_string = convertToString((char *)&cipher[0]);
+    //take the first 216 bytes of the cipher text and put it in the new variable called cipher_data
+    std::vector<uint8_t> cipher_data(_cipher.begin(), _cipher.begin() + 216);
+    kyber_cipher_data_str = kyber_utils::to_hex(cipher_data);
     return pqc_key;
 }
 
@@ -668,7 +669,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         // output kyber cipher data, xy coordinates and qkd parameter
         cout << "Kyber cipher data: " << kyber_cipher_data_str << endl;
         cout << "XY coordinates: " << xy_str << endl;
-        cout << "QKD parameter: " << qkd_parameter << endl;
+       
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
