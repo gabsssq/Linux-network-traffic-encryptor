@@ -430,7 +430,6 @@ string get_pqckey(int new_socket)
     read(new_socket, &pqc_buffer[0], MAXLINE);
     // read pqc buffer as string
     string pqc_string = convertToString((char *)&pqc_buffer[0]);
-    cout << "PQC key recieved: " << pqc_string << "\n";
 
     std::vector<uint8_t> _pkey(kyber512_kem::PKEY_LEN, 0);
     _pkey = pqc_buffer;
@@ -443,7 +442,6 @@ string get_pqckey(int new_socket)
     send(new_socket, cipher.data(), cipher.size(), 0);
     // convert cipher to string
     string cipher_string = convertToString((char *)&cipher[0]);
-    cout << "PQC key send: " << cipher_string << "\n";
     return pqc_key;
 }
 
@@ -679,6 +677,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         string pom_param;
         shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
         qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
+        cout << "QKD key established:" << bufferTCP.str() << "\n";
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);

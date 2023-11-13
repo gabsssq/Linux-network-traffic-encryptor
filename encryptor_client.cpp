@@ -442,9 +442,7 @@ string get_pqckey(int client_fd)
     */
     std::vector<unsigned char> pqc_buffer(MAXLINE);
     send(client_fd, pkey.data(), pkey.size(), 0);
-    cout << "PQC public key: " << kyber_utils::to_hex(pkey) << endl;
     read(client_fd, &pqc_buffer[0], MAXLINE);
-    cout << "PQC encapsulated key: " << kyber_utils::to_hex(pqc_buffer) << endl;
     std::vector<uint8_t> _cipher(kyber512_kem::CIPHER_LEN, 0);
     _cipher = pqc_buffer;
 
@@ -679,6 +677,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         string pom_param;
         shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
         qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
+        cout << "QKD key established:" << bufferTCP.str() << endl;
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
