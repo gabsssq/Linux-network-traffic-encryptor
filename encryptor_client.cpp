@@ -443,6 +443,7 @@ string get_pqckey(int client_fd)
     std::vector<unsigned char> pqc_buffer(MAXLINE);
     send(client_fd, pkey.data(), pkey.size(), 0);
     read(client_fd, &pqc_buffer[0], MAXLINE);
+
     std::vector<uint8_t> _cipher(kyber512_kem::CIPHER_LEN, 0);
     _cipher = pqc_buffer;
 
@@ -684,9 +685,9 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         string key_two = hmac_hashing(salt, ecdh_key);
         string key_three = hmac_hashing(salt, buffer_str);
 
-        string param_one = sha3_hashing(pqc_key, kyber_cipher_data_str);
-        string param_two = sha3_hashing(ecdh_key, xy_str);
-        string param_three = sha3_hashing(buffer_str, qkd_parameter);
+        string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
+        string param_two = sha3_hashing(ecdh_key, &xy_str);
+        string param_three = sha3_hashing(buffer_str, &qkd_parameter);
 
         string second_round_key_one = hmac_hashing(key_one, param_two + param_three);
         string second_round_key_two = hmac_hashing(key_two, param_one + param_three);
