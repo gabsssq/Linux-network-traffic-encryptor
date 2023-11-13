@@ -509,8 +509,8 @@ string PerformECDHKeyExchange(int client_fd)
     cout << "Sent key: " << sentKey << std::endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    CryptoPP::SecByteBlock dump(dh.PublicKeyLength()* 6 -200);
-    read(client_fd, dump.BytePtr(), dump.SizeInBytes());
+    //CryptoPP::SecByteBlock dump(dh.PublicKeyLength()* 6 -200);
+    //read(client_fd, dump.BytePtr(), dump.SizeInBytes());
     
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // print received key in hex format
@@ -808,13 +808,14 @@ int main(int argc, char *argv[])
         cout << "UDP connection established" << endl;
 
         // Set TCP socket to non-blocking state
-        fcntl(client_fd, F_SETFL, O_NONBLOCK);
-
+        
         while (status != 0)
         {
             // Establish new hybrid key
             key = rekey_cli(client_fd, qkd_ip, srv_ip);
             ref = time(NULL);
+            fcntl(client_fd, F_SETFL, O_NONBLOCK);
+
 
             cout << "New key established" << endl;
 
