@@ -722,6 +722,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
         string pom_param;
         shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
+        cout << "Pom param: " << pom_param << endl; 
         qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
         cout << "QKD key established:" << bufferTCP.str() << "\n";
 
