@@ -570,7 +570,7 @@ string hmac_hashing(string &salt, string &key)
     string result;
 
     CryptoPP::StringSource(key, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
-    
+
     return result;
 }
 
@@ -633,7 +633,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     tm *ltm = localtime(&now);
     string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
     string salt = time + std::to_string(counter);
-    salt = "wBvFh#7QjH8tLpNkRsYx1z3uA2s4Xc6WvBnMlKjIgFhDdSfGhJkLpOeQrTbUyVtXyZaCxwVuNmLkIjHgFdDsAaSdFgHjKlQwErTyUiOp";
+    salt = "wBvFh#7QjH8tLpNkRsYx1z3uA2s4Xc6WvBnMlKjIgFhDdSfGhJkLpOeQrTbUyVtXyZaCxwVuNmLkIjHgFdDsAaSdFgHjKlQwErTyUiOpAsDfGhJkLpOeRtYuIwQeRtYuI";
 
     string pqc_key = get_pqckey(new_socket);
     cout << "PQC key established:" << pqc_key << "\n";
@@ -654,7 +654,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         string param_two = sha3_hashing(ecdh_key, &xy_str);
         cout << "Param two: " << param_two << endl;
 
-         string second_round_param_one = param_one + param_two;
+        string second_round_param_one = param_one + param_two;
         string second_round_key_one = hmac_hashing(key_one, second_round_param_one);
         cout << "Second round key one: " << second_round_key_one << endl;
         string second_round_key_two = hmac_hashing(key_two, second_round_param_one);
@@ -718,7 +718,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         string param_two = sha3_hashing(ecdh_key, &xy_str);
         string param_three = sha3_hashing(buffer_str, &qkd_parameter);
 
-        
         string second_round_param_one = param_two + param_three;
         string second_round_param_two = param_one + param_three;
         string second_round_param_three = param_one + param_two;
