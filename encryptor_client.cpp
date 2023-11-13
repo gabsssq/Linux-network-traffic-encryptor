@@ -545,7 +545,7 @@ string PerformECDHKeyExchange(int client_fd)
 
 string hmac_hashing(string salt, string key)
 {
-    CryptoPP::SHA3_256 hash;
+    /*
     CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)salt.c_str(), salt.length());
 
     hmac.Update((const byte *)key.c_str(), key.length());
@@ -560,6 +560,11 @@ string hmac_hashing(string salt, string key)
     encoder.MessageEnd();
 
     return hmac_output;
+    */
+    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)salt.data(), salt.size());
+    string result;
+
+    CryptoPP::StringSource(key, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
 }
 
 string sha3_hashing(string key, string *public_value)
@@ -669,7 +674,6 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
 
         cout << "Kyber cipher data: " << kyber_cipher_data_str << endl;
         cout << "XY coordinates: " << xy_str << endl;
-        
 
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 

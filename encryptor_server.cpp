@@ -440,7 +440,7 @@ string get_pqckey(int new_socket)
 
     string pqc_key = kyber_utils::to_hex(shrd_key);
     send(new_socket, cipher.data(), cipher.size(), 0);
-    //take the first 216 bytes of the cipher text and put it in the new variable called cipher_data
+    // take the first 216 bytes of the cipher text and put it in the new variable called cipher_data
     std::vector<uint8_t> cipher_data(_cipher.begin(), _cipher.begin() + 216);
     kyber_cipher_data_str = kyber_utils::to_hex(cipher_data);
     return pqc_key;
@@ -548,23 +548,30 @@ string PerformECDHKeyExchange(int socket)
     return hex;
 }
 
-string hmac_hashing(string salt, string key)
+string hmac_hashing(string &salt, string &key)
 {
-    CryptoPP::SHA3_256 hash;
-    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)salt.c_str(), salt.length());
+    /*
+        CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)salt.c_str(), salt.length());
 
-    hmac.Update((const byte *)key.c_str(), key.length());
-    byte hmac_digest[CryptoPP::SHA3_256::DIGESTSIZE];
-    hmac.Final(hmac_digest);
+        hmac.Update((const byte *)key.c_str(), key.length());
+        byte hmac_digest[CryptoPP::SHA3_256::DIGESTSIZE];
+        hmac.Final(hmac_digest);
 
-    // write hmac_digest to string
-    CryptoPP::HexEncoder encoder;
-    string hmac_output;
-    encoder.Attach(new CryptoPP::StringSink(hmac_output));
-    encoder.Put(hmac_digest, sizeof(hmac_digest));
-    encoder.MessageEnd();
+        // write hmac_digest to string
+        CryptoPP::HexEncoder encoder;
+        string hmac_output;
+        encoder.Attach(new CryptoPP::StringSink(hmac_output));
+        encoder.Put(hmac_digest, sizeof(hmac_digest));
+        encoder.MessageEnd();
 
-    return hmac_output;
+        return hmac_output;
+        */
+    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)salt.data(), salt.size());
+    string result;
+
+    CryptoPP::StringSource(key, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
+
+    return result;
 }
 
 string sha3_hashing(string key, string *public_value)
@@ -676,7 +683,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         // output kyber cipher data, xy coordinates and qkd parameter
         cout << "Kyber cipher data: " << kyber_cipher_data_str << endl;
         cout << "XY coordinates: " << xy_str << endl;
-       
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
