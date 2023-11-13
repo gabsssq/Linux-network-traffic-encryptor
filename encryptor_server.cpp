@@ -570,7 +570,7 @@ string hmac_hashing(string &salt, string &key)
     string result;
 
     CryptoPP::StringSource(key, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
-
+    
     return result;
 }
 
