@@ -661,7 +661,6 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     else
     {
 
-        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
 
         std::ifstream t("key");
         std::stringstream buffer;
@@ -669,27 +668,12 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         // buffer to string
         string buffer_str = buffer.str();
 
-        /* std::string message = buffer.str() + pqc_key + ecdh_key;
-         hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
-         CryptoPP::HexEncoder encoder;
-         std::string output;
-         encoder.Attach(new CryptoPP::StringSink(output));
-         encoder.Put(digest, sizeof(digest));
-         encoder.MessageEnd();
-
-         int x = 0;
-         for (unsigned int i = 0; i < output.length(); i += 2)
-         {
-             std::string bytestring = output.substr(i, 2);
-             key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-             x++;
-         }
-         */
 
         std::ifstream s("keyID");
         std::stringstream bufferTCP;
         bufferTCP << s.rdbuf();
 
+        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
         // hash content of bufferTCP with SHAKE128
         shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
         string pom_param;

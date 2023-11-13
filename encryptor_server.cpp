@@ -665,7 +665,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     else
     {
 
-        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
 
         std::ifstream t("key");
         std::stringstream buffer;
@@ -673,27 +672,11 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         // buffer to string
         string buffer_str = buffer.str();
 
-        /* string message = buffer.str() + pqc_key + ecdh_key;
-         hash.CalculateDigest(digest, (byte *)message.c_str(), message.length());
-         CryptoPP::HexEncoder encoder;
-         string output;
-         encoder.Attach(new CryptoPP::StringSink(output));
-         encoder.Put(digest, sizeof(digest));
-         encoder.MessageEnd();
-
-         int x = 0;
-         for (unsigned int i = 0; i < output.length(); i += 2)
-         {
-             string bytestring = output.substr(i, 2);
-             key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
-             x++;
-         }
-         */
-
         std::ifstream s("keyID");
         std::stringstream bufferTCP;
         bufferTCP << s.rdbuf();
 
+        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
         // hash content of bufferTCP with SHAKE128
         shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
         string pom_param;
@@ -834,7 +817,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 // get_qkdkey(qkd_ip, bufferTCP);
-                //key = rekey_srv(new_socket, qkd_ip);
+                key = rekey_srv(new_socket, qkd_ip);
             }
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
