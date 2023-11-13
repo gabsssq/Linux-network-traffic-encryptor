@@ -711,9 +711,12 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         string param_two = sha3_hashing(ecdh_key, &xy_str);
         string param_three = sha3_hashing(buffer_str, &qkd_parameter);
 
-        string second_round_key_one = hmac_hashing(key_one, param_two + param_three);
-        string second_round_key_two = hmac_hashing(key_two, param_one + param_three);
-        string second_round_key_three = hmac_hashing(key_three, param_one + param_two);
+        string second_round_param_one = param_two + param_three;
+        string second_round_param_two = param_one + param_three;
+        string second_round_param_three = param_one + param_two;
+        string second_round_key_one = hmac_hashing(key_one, second_round_param_one);
+        string second_round_key_two = hmac_hashing(key_two, second_round_param_two);
+        string second_round_key_three = hmac_hashing(key_three, second_round_param_three);
 
         string third_round_key_one = xorStrings(second_round_key_one, second_round_key_two);
         string fourth_round_key_one = xorStrings(third_round_key_one, second_round_key_three);
