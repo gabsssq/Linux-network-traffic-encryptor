@@ -736,14 +736,10 @@ int main(int argc, char *argv[])
     const char *srv_ip = argv[1];
 
     // Second argument - QKD server IP address (optional)
-    // First argument - QKD server IP address
-    if (argv[2] == NULL)
+    string qkd_ip = "";
+    if (argv[1] != NULL)
     {
-        string qkd_ip = "";
-    }
-    else
-    {
-        string qkd_ip = argv[2];
+        qkd_ip = argv[2];
     }
     //******** CLIENT MODE: ********//
 

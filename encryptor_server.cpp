@@ -728,15 +728,11 @@ int main(int argc, char *argv[])
         help();
         return 0;
     }*/
-
+    string qkd_ip = "";
     // First argument - QKD server IP address
-    if (argv[1] == NULL)
+    if (argv[1] != NULL)
     {
-        string qkd_ip = "";
-    }
-    else
-    {
-        string qkd_ip = argv[1];
+        qkd_ip = argv[1];;
     }
 
     //******** SERVER MODE: ********//
