@@ -684,9 +684,9 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         string key_two = hmac_hashing(salt, ecdh_key);
         string key_three = hmac_hashing(salt, buffer_str);
 
-        string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
-        string param_two = sha3_hashing(ecdh_key, &xy_str);
-        string param_three = sha3_hashing(buffer_str, &qkd_parameter);
+        string param_one = sha3_hashing(pqc_key, kyber_cipher_data_str);
+        string param_two = sha3_hashing(ecdh_key, xy_str);
+        string param_three = sha3_hashing(buffer_str, qkd_parameter);
 
         string second_round_key_one = hmac_hashing(key_one, param_two + param_three);
         string second_round_key_two = hmac_hashing(key_two, param_one + param_three);
