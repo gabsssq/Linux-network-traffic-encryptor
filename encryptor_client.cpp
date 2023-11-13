@@ -561,10 +561,25 @@ string hmac_hashing(string salt, string key)
 
     return hmac_output;
     */
-    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)salt.data(), salt.size());
+     const size_t desired_length = 216;
+
+    string padded_key(salt);
+    string padded_message(key);
+
+    // Pad the key and message with zeros if needed
+    if (padded_key.size() < desired_length) {
+        padded_key.resize(desired_length, '\0');
+    }
+
+    if (padded_message.size() < desired_length) {
+        padded_message.resize(desired_length, '\0');
+    }
+
+    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte*)padded_key.data(), padded_key.size());
     string result;
 
-    CryptoPP::StringSource(key, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
+    CryptoPP::StringSource(padded_message, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
+
     return result;
 }
 
