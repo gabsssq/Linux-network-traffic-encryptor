@@ -652,6 +652,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
 
+         cout << "Key established: " << output_key << endl;
+
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());

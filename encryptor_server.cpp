@@ -655,6 +655,8 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
 
+         cout << "Key established: " << output_key << endl;
+
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
     }
