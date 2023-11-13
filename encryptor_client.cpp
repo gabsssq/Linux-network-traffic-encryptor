@@ -737,7 +737,7 @@ int main(int argc, char *argv[])
 
     // Second argument - QKD server IP address (optional)
     string qkd_ip = "";
-    if (argv[1] != NULL)
+    if (argv[2] != NULL)
     {
         qkd_ip = argv[2];
     }
