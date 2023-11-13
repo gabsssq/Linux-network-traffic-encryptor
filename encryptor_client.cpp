@@ -647,9 +647,10 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         string param_two = sha3_hashing(ecdh_key, &xy_str);
         cout << "Param two: " << param_two << endl;
 
-        string second_round_key_one = hmac_hashing(key_one, param_one + param_two);
+        string second_round_param_one = param_one + param_two;
+        string second_round_key_one = hmac_hashing(key_one, second_round_param_one);
         cout << "Second round key one: " << second_round_key_one << endl;
-        string second_round_key_two = hmac_hashing(key_two, param_one + param_two);
+        string second_round_key_two = hmac_hashing(key_two, second_round_param_one);
         cout << "Second round key two: " << second_round_key_two << endl;
 
         string key = xorStrings(second_round_key_one, second_round_key_two);
