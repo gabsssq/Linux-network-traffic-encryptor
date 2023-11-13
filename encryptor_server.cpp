@@ -714,6 +714,8 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         std::ifstream s("keyID");
         std::stringstream bufferTCP;
         bufferTCP << s.rdbuf();
+        // bufferTCP to string
+        string bufferTCP_str = bufferTCP.str();
 
         system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
         // hash content of bufferTCP with SHAKE128
