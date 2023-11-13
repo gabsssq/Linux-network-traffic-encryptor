@@ -497,7 +497,6 @@ string PerformECDHKeyExchange(int client_fd)
     pubEncoder.MessageEnd();
     cout << "Public key: " << pubKey << std::endl;
 
-    
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
     // print sent key in hex format
@@ -508,9 +507,9 @@ string PerformECDHKeyExchange(int client_fd)
     cout << "Sent key: " << sentKey << std::endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
-    //CryptoPP::SecByteBlock dump(dh.PublicKeyLength()* 6 -200);
-    //read(client_fd, dump.BytePtr(), dump.SizeInBytes());
-    
+    // CryptoPP::SecByteBlock dump(dh.PublicKeyLength()* 6 -200);
+    // read(client_fd, dump.BytePtr(), dump.SizeInBytes());
+
     read(client_fd, receivedKey.BytePtr(), receivedKey.SizeInBytes());
     // print received key in hex format
     string recKey;
@@ -652,7 +651,14 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
 
-         cout << "Key established: " << output_key << endl;
+        cout << "Key established: " << output_key << endl;
+        int x = 0;
+        for (unsigned int i = 0; i < output_key.length(); i += 2)
+        {
+            string bytestring = output_key.substr(i, 2);
+            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
 
         send(client_fd, output_key.c_str(), output_key.length(), 0);
 
@@ -662,13 +668,11 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     else
     {
 
-
         std::ifstream t("key");
         std::stringstream buffer;
         buffer << t.rdbuf();
         // buffer to string
         string buffer_str = buffer.str();
-
 
         std::ifstream s("keyID");
         std::stringstream bufferTCP;
@@ -797,14 +801,13 @@ int main(int argc, char *argv[])
         cout << "UDP connection established" << endl;
 
         // Set TCP socket to non-blocking state
-        
+
         while (status != 0)
         {
             // Establish new hybrid key
             key = rekey_cli(client_fd, qkd_ip, srv_ip);
             ref = time(NULL);
             fcntl(client_fd, F_SETFL, O_NONBLOCK);
-
 
             cout << "New key established" << endl;
 

@@ -655,7 +655,15 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
 
-         cout << "Key established: " << output_key << endl;
+        cout << "Key established: " << output_key << endl;
+
+        int x = 0;
+        for (unsigned int i = 0; i < output_key.length(); i += 2)
+        {
+            string bytestring = output_key.substr(i, 2);
+            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
@@ -734,7 +742,8 @@ int main(int argc, char *argv[])
     // First argument - QKD server IP address
     if (argv[1] != NULL)
     {
-        qkd_ip = argv[1];;
+        qkd_ip = argv[1];
+        ;
     }
 
     //******** SERVER MODE: ********//
@@ -816,7 +825,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 // get_qkdkey(qkd_ip, bufferTCP);
-                //set socket to blocking mode
+                // set socket to blocking mode
                 fcntl(new_socket, F_SETFL, 0);
                 key = rekey_srv(new_socket, qkd_ip);
                 // Set TCP socket to NON-blocking mode
