@@ -446,7 +446,7 @@ string get_pqckey(int new_socket)
     return pqc_key;
 }
 
-void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
+string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
 {
     CryptoPP::SHAKE128 shake128_hash;
     std::ofstream myfile;
@@ -465,6 +465,8 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     string pom_param;
     shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
     qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 216);
+
+    return pom_param;
 }
 
 // Program usage help
@@ -635,7 +637,7 @@ string xorStrings(const string &str1, const string &str2)
    and than send its ID to gateway in server mode.
 */
 
-SecByteBlock rekey_srv(int new_socket, string qkd_ip)
+SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
 {
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
@@ -705,26 +707,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     else
     {
 
-        std::ifstream t("key");
-        std::stringstream buffer;
-        buffer << t.rdbuf();
-        // buffer to string
-        string buffer_str = buffer.str();
-
-        std::ifstream s("keyID");
-        std::stringstream bufferTCP;
-        bufferTCP << s.rdbuf();
-        // bufferTCP to string
-        string bufferTCP_str = bufferTCP.str();
-
-        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
-        // hash content of bufferTCP with SHAKE128
-        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
-        string pom_param;
-        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
-        cout << "Pom param: " << pom_param << endl; 
-        qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
-        cout << "QKD key established:" << bufferTCP.str() << "\n";
+        string buffer_str = get_qkdkey(qkd_ip, bufferTCP);
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
@@ -840,7 +823,7 @@ int main(int argc, char *argv[])
         // Server connection details
 
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(new_socket, qkd_ip);
+        key = rekey_srv(new_socket, qkd_ip, bufferTCP);
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
 
