@@ -843,10 +843,10 @@ int main(int argc, char *argv[])
         while (status != 0)
         {
             // Establish new hybrid key
-            fcntl(client_fd, F_SETFL, 0);
+            //fcntl(client_fd, F_SETFL, 0);
             key = rekey_cli(client_fd, qkd_ip, srv_ip);
             ref = time(NULL);
-            fcntl(client_fd, F_SETFL, O_NONBLOCK);
+            //fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
             cout << "New key established" << endl;
 
