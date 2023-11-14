@@ -858,9 +858,9 @@ int main(int argc, char *argv[])
                 // fcntl(new_socket, F_SETFL, 0);
                 key = rekey_srv(new_socket, qkd_ip, bufferTCP);
                 // set socket to non-blocking mode
-                fcntl(new_socket, F_SETFL, O_NONBLOCK);
                 // Set TCP socket to NON-blocking mode
             }
+                fcntl(new_socket, F_SETFL, O_NONBLOCK);
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
             if (E_N_C_R(sockfd, cliaddr, &key, tundesc, len, &prng, e) || D_E_C_R(sockfd, servaddr, &key, tundesc))
