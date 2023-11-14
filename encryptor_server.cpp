@@ -829,6 +829,7 @@ int main(int argc, char *argv[])
 
         // Combine PQC a QKD key into hybrid key for AES
         key = rekey_srv(new_socket, qkd_ip, bufferTCP);
+        cout << "hotovson" << "\n";
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
 
