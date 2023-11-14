@@ -706,7 +706,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
     }
     else
     {
-        read(new_socket, bufferTCP, MAXLINE);
+        
         get_qkdkey(qkd_ip, bufferTCP);
 
         std::ifstream t("key");
@@ -828,6 +828,7 @@ int main(int argc, char *argv[])
         // Server connection details
         //get_qkdkey(qkd_ip, bufferTCP);
         // Combine PQC a QKD key into hybrid key for AES
+        read(new_socket, bufferTCP, MAXLINE);
         key = rekey_srv(new_socket, qkd_ip, bufferTCP);
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
