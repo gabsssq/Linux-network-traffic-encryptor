@@ -847,7 +847,7 @@ int main(int argc, char *argv[])
             cout << "Establishing new key" << endl;
             key = rekey_cli(client_fd, qkd_ip, srv_ip);
             ref = time(NULL);
-            //fcntl(client_fd, F_SETFL, O_NONBLOCK);
+            fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
             cout << "New key established" << endl;
 

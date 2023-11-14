@@ -841,7 +841,7 @@ int main(int argc, char *argv[])
 
         // Combine PQC a QKD key into hybrid key for AES
         key = rekey_srv(new_socket, qkd_ip);
-
+        fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
 
         // Return to "waiting on TCP connection" state if TCP connection seems dead
@@ -870,7 +870,7 @@ int main(int argc, char *argv[])
                 key = rekey_srv(new_socket, qkd_ip);
                 // Set TCP socket to NON-blocking mode
             }
-            //fcntl(new_socket, F_SETFL, O_NONBLOCK);
+            
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
             if (E_N_C_R(sockfd, cliaddr, &key, tundesc, len, &prng, e) || D_E_C_R(sockfd, servaddr, &key, tundesc))
