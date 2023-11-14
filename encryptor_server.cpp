@@ -471,7 +471,10 @@ string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
     qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 216);
 
-    return buffer.str();
+    //convert buffer to string
+    string key_str = buffer.str();
+
+    return key_str;
 }
 
 // Program usage help
