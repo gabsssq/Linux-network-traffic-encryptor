@@ -709,7 +709,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
         read(new_socket, bufferTCP, MAXLINE);
         get_qkdkey(qkd_ip, bufferTCP);
 
-        SecByteBlock qkd_key(AES::MAX_KEYLENGTH);
         std::ifstream t("key");
         std::stringstream buffer;
         buffer << t.rdbuf();
