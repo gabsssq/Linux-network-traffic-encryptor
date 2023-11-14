@@ -712,6 +712,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         bufferTCP << s.rdbuf();
         // bufferTCP to string
         string bufferTCP_str = bufferTCP.str();
+        cout << "KeyID: " << bufferTCP_str << endl;
 
         send(client_fd, bufferTCP_str.c_str(), bufferTCP_str.length(), 0);
         // hash content of bufferTCP with SHAKE128
