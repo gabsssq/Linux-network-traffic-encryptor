@@ -720,7 +720,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         string pom_param;
         shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
         qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
-        cout << "QKD key established:" << buffer_str.str() << endl;
+        cout << "QKD key established:" << buffer_str << endl;
 
 
         // all parameters set, starting to creating hybrid key
