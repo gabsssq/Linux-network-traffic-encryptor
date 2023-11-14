@@ -448,8 +448,6 @@ string get_pqckey(int new_socket)
 
 string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
 {
-    // Obtain QKD key with keyID
-    system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
     CryptoPP::SHAKE128 shake128_hash;
     std::ofstream myfile;
     myfile.open("keyID");
@@ -459,6 +457,13 @@ string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     std::stringstream bufferTCP_string;
     bufferTCP_string << bufferTCP;
 
+    // Obtain QKD key with keyID
+    system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
+
+    SecByteBlock key(AES::MAX_KEYLENGTH);
+    std::ifstream t("key");
+    std::stringstream buffer;
+    buffer << t.rdbuf();
 
     // hash content of bufferTCP with SHAKE128
     shake128_hash.Update((const byte *)bufferTCP_string.str().c_str(), bufferTCP_string.str().length());
@@ -466,7 +471,7 @@ string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
     qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 216);
 
-    return pom_param;
+    return buffer.str();
 }
 
 // Program usage help
@@ -574,15 +579,17 @@ string hmac_hashing(string &salt, string &key)
     string padded_message(key);
 
     // Pad the key and message with zeros if needed
-    if (padded_key.size() < desired_length) {
+    if (padded_key.size() < desired_length)
+    {
         padded_key.resize(desired_length, '\0');
     }
 
-    if (padded_message.size() < desired_length) {
+    if (padded_message.size() < desired_length)
+    {
         padded_message.resize(desired_length, '\0');
     }
 
-    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte*)padded_key.data(), padded_key.size());
+    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)padded_key.data(), padded_key.size());
     string result;
 
     CryptoPP::StringSource(padded_message, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
@@ -849,12 +856,11 @@ int main(int argc, char *argv[])
             {
                 // get_qkdkey(qkd_ip, bufferTCP);
                 // set socket to blocking mode
-                //fcntl(new_socket, F_SETFL, 0);
+                // fcntl(new_socket, F_SETFL, 0);
                 fcntl(new_socket, F_SETFL, fcntl(new_socket, F_GETFL, 0) & ~O_NONBLOCK);
                 key = rekey_srv(new_socket, qkd_ip, bufferTCP);
                 // Set TCP socket to NON-blocking mode
             }
-            
 
             // Create runnable thread if there are data available either on tun interface or UDP socket
             if (E_N_C_R(sockfd, cliaddr, &key, tundesc, len, &prng, e) || D_E_C_R(sockfd, servaddr, &key, tundesc))
