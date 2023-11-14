@@ -721,6 +721,8 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
         qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
         cout << "QKD key established:" << bufferTCP.str() << endl;
 
+        send(client_fd, pom_param.c_str(), pom_param.length(), 0);
+
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
@@ -758,7 +760,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
             x++;
         }
 
-        send(client_fd, output_key.c_str(), output_key.length(), 0);
+        
 
         cout << "Key established: " << output_key << endl;
 

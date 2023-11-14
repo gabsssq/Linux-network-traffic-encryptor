@@ -706,7 +706,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
     }
     else
     {
-
+        read(new_socket, bufferTCP, MAXLINE);
         string buffer_str = get_qkdkey(qkd_ip, bufferTCP);
 
         // all parameters set, starting to creating hybrid key
@@ -815,7 +815,6 @@ int main(int argc, char *argv[])
 
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
-        // read(new_socket, bufferTCP, MAXLINE);
         //  get_qkdkey(qkd_ip, bufferTCP);
 
         //******** KEY ESTABLISHMENT: ********//
