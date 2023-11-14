@@ -826,7 +826,7 @@ int main(int argc, char *argv[])
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
         // Server connection details
-
+        get_qkdkey(qkd_ip, bufferTCP);
         // Combine PQC a QKD key into hybrid key for AES
         key = rekey_srv(new_socket, qkd_ip, bufferTCP);
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
