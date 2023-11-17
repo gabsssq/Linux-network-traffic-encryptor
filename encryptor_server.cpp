@@ -457,6 +457,11 @@ string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     // Obtain QKD key with keyID
     system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
 
+    std::ifstream t("key");
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    string qkd_key = buffer.str();
+    
     // convert bufferTCP to string
     std::stringstream bufferTCP_string;
     bufferTCP_string << bufferTCP;
@@ -466,10 +471,6 @@ string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
     qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 216);
 
-    std::ifstream t("key");
-    std::stringstream buffer;
-    buffer << t.rdbuf();
-    string qkd_key = buffer.str();
     return qkd_key;
 }
 
@@ -712,7 +713,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
     }
     else
     {   
-        listen(new_socket, 3);
+        
         read(new_socket, bufferTCP, MAXLINE);
         string buffer_str = get_qkdkey(qkd_ip, bufferTCP);
 
