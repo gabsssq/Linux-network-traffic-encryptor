@@ -461,7 +461,7 @@ string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     std::stringstream buffer;
     buffer << t.rdbuf();
     string qkd_key = buffer.str();
-    
+
     // convert bufferTCP to string
     std::stringstream bufferTCP_string;
     bufferTCP_string << bufferTCP;
@@ -716,6 +716,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
         
         read(new_socket, bufferTCP, MAXLINE);
         string buffer_str = get_qkdkey(qkd_ip, bufferTCP);
+        cout << "QKD key established:" << buffer_str << "\n";
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
