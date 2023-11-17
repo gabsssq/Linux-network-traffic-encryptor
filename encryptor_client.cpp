@@ -663,7 +663,7 @@ string getQkdKey(int client_fd, string qkd_ip)
    Client get new key from QKD server, combine it with PQC key
    and than send its ID to gateway in server mode.
 */
-SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string buffer_str)
+SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
 {
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
@@ -734,7 +734,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string 
     else
     {
 
-        string qkd_key = getQkdKey(client_fd, qkd_ip);
+        string buffer_str = getQkdKey(client_fd, qkd_ip);
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
@@ -859,7 +859,7 @@ int main(int argc, char *argv[])
             // fcntl(client_fd, F_SETFL, 0);
             fcntl(client_fd, F_SETFL, fcntl(client_fd, F_GETFL, 0) & ~O_NONBLOCK);
             cout << "Establishing new key" << endl;
-            key = rekey_cli(client_fd, qkd_ip, srv_ip, qkd_key);
+            key = rekey_cli(client_fd, qkd_ip, srv_ip);
             ref = time(NULL);
             fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
