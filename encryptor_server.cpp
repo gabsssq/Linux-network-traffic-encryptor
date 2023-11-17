@@ -821,7 +821,7 @@ int main(int argc, char *argv[])
 
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
-        //  get_qkdkey(qkd_ip, bufferTCP);
+        get_qkdkey(qkd_ip, bufferTCP);
 
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party

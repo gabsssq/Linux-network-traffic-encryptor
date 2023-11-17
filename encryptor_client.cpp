@@ -561,21 +561,23 @@ string hmac_hashing(string salt, string key)
 
     return hmac_output;
     */
-     const size_t desired_length = 216;
+    const size_t desired_length = 216;
 
     string padded_key(salt);
     string padded_message(key);
 
     // Pad the key and message with zeros if needed
-    if (padded_key.size() < desired_length) {
+    if (padded_key.size() < desired_length)
+    {
         padded_key.resize(desired_length, '\0');
     }
 
-    if (padded_message.size() < desired_length) {
+    if (padded_message.size() < desired_length)
+    {
         padded_message.resize(desired_length, '\0');
     }
 
-    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte*)padded_key.data(), padded_key.size());
+    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)padded_key.data(), padded_key.size());
     string result;
 
     CryptoPP::StringSource(padded_message, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
@@ -623,13 +625,45 @@ string xorStrings(const string &str1, const string &str2)
     return result;
 }
 
+string getQkdKey(int client_fd, string qkd_ip)
+{
+
+    CryptoPP::SHA3_256 hash;
+    CryptoPP::SHAKE128 shake128_hash;
+
+    system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
+
+    std::ifstream t("key");
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    // buffer to string
+    string buffer_str = buffer.str();
+
+    std::ifstream s("keyID");
+    std::stringstream bufferTCP;
+    bufferTCP << s.rdbuf();
+    // bufferTCP to string
+    string bufferTCP_str = bufferTCP.str();
+    cout << "KeyID: " << bufferTCP_str << endl;
+
+    send(client_fd, bufferTCP_str.c_str(), bufferTCP_str.length(), 0);
+    // hash content of bufferTCP with SHAKE128
+    shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
+    string pom_param;
+    shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
+    qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
+    cout << "QKD key established:" << buffer_str << endl;
+
+    return pom_param;
+}
+
 /*
    Rekeying - client mode
 
    Client get new key from QKD server, combine it with PQC key
    and than send its ID to gateway in server mode.
 */
-SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
+SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string buffer_str)
 {
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
@@ -699,29 +733,6 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     }
     else
     {
-        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
-
-        std::ifstream t("key");
-        std::stringstream buffer;
-        buffer << t.rdbuf();
-        // buffer to string
-        string buffer_str = buffer.str();
-
-        std::ifstream s("keyID");
-        std::stringstream bufferTCP;
-        bufferTCP << s.rdbuf();
-        // bufferTCP to string
-        string bufferTCP_str = bufferTCP.str();
-        cout << "KeyID: " << bufferTCP_str << endl;
-
-        send(client_fd, bufferTCP_str.c_str(), bufferTCP_str.length(), 0);
-        // hash content of bufferTCP with SHAKE128
-        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
-        string pom_param;
-        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
-        qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
-        cout << "QKD key established:" << buffer_str << endl;
-
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
@@ -759,8 +770,6 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
             key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
             x++;
         }
-
-        
 
         cout << "Key established: " << output_key << endl;
 
@@ -845,10 +854,11 @@ int main(int argc, char *argv[])
         while (status != 0)
         {
             // Establish new hybrid key
-            //fcntl(client_fd, F_SETFL, 0);
+            // fcntl(client_fd, F_SETFL, 0);
+            string qkd_key = getQkdKey(client_fd, qkd_ip);
             fcntl(client_fd, F_SETFL, fcntl(client_fd, F_GETFL, 0) & ~O_NONBLOCK);
             cout << "Establishing new key" << endl;
-            key = rekey_cli(client_fd, qkd_ip, srv_ip);
+            key = rekey_cli(client_fd, qkd_ip, srv_ip, qkd_key);
             ref = time(NULL);
             fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
