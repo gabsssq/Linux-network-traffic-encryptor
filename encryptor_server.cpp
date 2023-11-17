@@ -465,6 +465,12 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     string pom_param;
     shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
     qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 216);
+
+    std::ifstream t("key");
+    std::stringstream buffer;
+    buffer << t.rdbuf();
+    string buffer_str = buffer.str();
+    cout << "QKD key: " << buffer_str << endl;
 }
 
 // Program usage help
@@ -709,12 +715,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
         read(new_socket, bufferTCP, MAXLINE);
         get_qkdkey(qkd_ip, bufferTCP);
 
-        std::ifstream t("key");
-        std::stringstream buffer;
-        buffer << t.rdbuf();
-        string buffer_str = buffer.str();
-        cout << "QKD key: " << buffer_str << endl;
-
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
@@ -825,7 +825,7 @@ int main(int argc, char *argv[])
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
         // Server connection details
-        //get_qkdkey(qkd_ip, bufferTCP);
+        // get_qkdkey(qkd_ip, bufferTCP);
         // Combine PQC a QKD key into hybrid key for AES
         key = rekey_srv(new_socket, qkd_ip, bufferTCP);
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
@@ -852,7 +852,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 fcntl(new_socket, F_SETFL, fcntl(new_socket, F_GETFL, 0) & ~O_NONBLOCK);
-                
+
                 // set socket to blocking mode
                 // fcntl(new_socket, F_SETFL, 0);
                 key = rekey_srv(new_socket, qkd_ip, bufferTCP);
