@@ -446,7 +446,7 @@ string get_pqckey(int new_socket)
     return pqc_key;
 }
 
-void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
+string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
 {
     CryptoPP::SHAKE128 shake128_hash;
     std::ofstream myfile;
@@ -469,8 +469,8 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     std::ifstream t("key");
     std::stringstream buffer;
     buffer << t.rdbuf();
-    string buffer_str = buffer.str();
-    cout << "QKD key: " << buffer_str << endl;
+    string qkd_key = buffer.str();
+    return qkd_key;
 }
 
 // Program usage help
@@ -711,9 +711,10 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
         return sec_key;
     }
     else
-    {
+    {   
+        listen(new_socket, 3);
         read(new_socket, bufferTCP, MAXLINE);
-        get_qkdkey(qkd_ip, bufferTCP);
+        string buffer_str = get_qkdkey(qkd_ip, bufferTCP);
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
