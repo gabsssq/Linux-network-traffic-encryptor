@@ -734,6 +734,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string 
     else
     {
 
+        string qkd_key = getQkdKey(client_fd, qkd_ip);
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
@@ -849,7 +850,7 @@ int main(int argc, char *argv[])
 
         cout << "UDP connection established" << endl;
 
-        string qkd_key = getQkdKey(client_fd, qkd_ip);
+        
         // Set TCP socket to non-blocking state
 
         while (status != 0)

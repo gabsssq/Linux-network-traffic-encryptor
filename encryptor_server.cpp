@@ -821,7 +821,6 @@ int main(int argc, char *argv[])
 
         // QKD keyID receive
         char bufferTCP[MAXLINE] = {0};
-        get_qkdkey(qkd_ip, bufferTCP);
 
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
@@ -853,7 +852,7 @@ int main(int argc, char *argv[])
             if (status > 0)
             {
                 fcntl(new_socket, F_SETFL, fcntl(new_socket, F_GETFL, 0) & ~O_NONBLOCK);
-                get_qkdkey(qkd_ip, bufferTCP);
+                
                 // set socket to blocking mode
                 // fcntl(new_socket, F_SETFL, 0);
                 key = rekey_srv(new_socket, qkd_ip, bufferTCP);
