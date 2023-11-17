@@ -849,13 +849,13 @@ int main(int argc, char *argv[])
 
         cout << "UDP connection established" << endl;
 
+        string qkd_key = getQkdKey(client_fd, qkd_ip);
         // Set TCP socket to non-blocking state
 
         while (status != 0)
         {
             // Establish new hybrid key
             // fcntl(client_fd, F_SETFL, 0);
-            string qkd_key = getQkdKey(client_fd, qkd_ip);
             fcntl(client_fd, F_SETFL, fcntl(client_fd, F_GETFL, 0) & ~O_NONBLOCK);
             cout << "Establishing new key" << endl;
             key = rekey_cli(client_fd, qkd_ip, srv_ip, qkd_key);
