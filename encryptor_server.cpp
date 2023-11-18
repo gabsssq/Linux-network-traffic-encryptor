@@ -863,8 +863,6 @@ int main(int argc, char *argv[])
                 if (argv[1] != NULL)
                 {
                     // QKD keyID receive
-                    listen(new_socket, 3);
-                    read(new_socket, bufferTCP, MAXLINE);
                     get_qkdkey(qkd_ip, bufferTCP);
                 }
                 key = rekey_srv(new_socket, qkd_ip);
