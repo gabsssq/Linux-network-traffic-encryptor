@@ -457,8 +457,7 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     myfile << bufferTCP;
     myfile.close();
     //bufferTCP to string
-    std::stringstream bufferTCP_string;
-    bufferTCP_string << bufferTCP;
+    string bufferTCP_string = convertToString(bufferTCP);
     cout << "QKD keyID recieved: " << bufferTCP_string << endl;
 
     // Obtain QKD key with keyID
