@@ -823,7 +823,7 @@ int main(int argc, char *argv[])
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
         char bufferTCP[MAXLINE] = {0};
-        if (argv[1] = NULL)
+        if (argv[1] != NULL)
         {
             // QKD keyID receive
             read(new_socket, bufferTCP, MAXLINE);
