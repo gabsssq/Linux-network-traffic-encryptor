@@ -463,7 +463,7 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     // convert bufferTCP to string
     std::stringstream bufferTCP_string;
     bufferTCP_string << bufferTCP;
-    cout << "QKD keyID recieved: " << bufferTCP_string << endl;
+    cout << "QKD keyID recieved: " << bufferTCP_string.str() << endl;
     // hash content of bufferTCP with SHAKE128
     shake128_hash.Update((const byte *)bufferTCP_string.str().c_str(), bufferTCP_string.str().length());
     string pom_param;
