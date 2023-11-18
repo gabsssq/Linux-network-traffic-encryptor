@@ -446,9 +446,12 @@ string get_pqckey(int new_socket)
     return pqc_key;
 }
 
-string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
+void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
 {
+
+    CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
+
     std::ofstream myfile;
     myfile.open("keyID");
     myfile << bufferTCP;
@@ -456,11 +459,6 @@ string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
 
     // Obtain QKD key with keyID
     system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
-
-    std::ifstream t("key");
-    std::stringstream buffer;
-    buffer << t.rdbuf();
-    string qkd_key = buffer.str();
 
     // convert bufferTCP to string
     std::stringstream bufferTCP_string;
@@ -470,8 +468,6 @@ string get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     string pom_param;
     shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
     qkd_parameter = pom_param + bufferTCP_string.str().substr(0, 216);
-
-    return qkd_key;
 }
 
 // Program usage help
@@ -644,7 +640,7 @@ string xorStrings(const string &str1, const string &str2)
    and than send its ID to gateway in server mode.
 */
 
-SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
+SecByteBlock rekey_srv(int new_socket, string qkd_ip)
 {
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
@@ -712,11 +708,13 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip, char bufferTCP[MAXLINE])
         return sec_key;
     }
     else
-    {   
+    {
+
         
-        read(new_socket, bufferTCP, MAXLINE);
-        string buffer_str = get_qkdkey(qkd_ip, bufferTCP);
-        cout << "QKD key established:" << buffer_str << "\n";
+        std::ifstream t("key");
+        std::stringstream buffer;
+        buffer << t.rdbuf();
+        string buffer_str = buffer.str();
 
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
@@ -822,15 +820,20 @@ int main(int argc, char *argv[])
         // UDP connection create
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
-        // QKD keyID receive
-        char bufferTCP[MAXLINE] = {0};
+        if (argv[1] = NULL)
+        {
+            // QKD keyID receive
+            char bufferTCP[MAXLINE] = {0};
+            read(new_socket, bufferTCP, MAXLINE);
+            get_qkdkey(qkd_ip, bufferTCP);
+        }
 
         //******** KEY ESTABLISHMENT: ********//
         // Send the public key to the other party
         // Server connection details
         // get_qkdkey(qkd_ip, bufferTCP);
         // Combine PQC a QKD key into hybrid key for AES
-        key = rekey_srv(new_socket, qkd_ip, bufferTCP);
+        key = rekey_srv(new_socket, qkd_ip);
         fcntl(new_socket, F_SETFL, O_NONBLOCK);
         status = -1;
 

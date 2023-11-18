@@ -625,37 +625,6 @@ string xorStrings(const string &str1, const string &str2)
     return result;
 }
 
-string getQkdKey(int client_fd, string qkd_ip)
-{
-
-    CryptoPP::SHA3_256 hash;
-    CryptoPP::SHAKE128 shake128_hash;
-
-    system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
-
-    std::ifstream t("key");
-    std::stringstream buffer;
-    buffer << t.rdbuf();
-    // buffer to string
-    string buffer_str = buffer.str();
-
-    std::ifstream s("keyID");
-    std::stringstream bufferTCP;
-    bufferTCP << s.rdbuf();
-    // bufferTCP to string
-    string bufferTCP_str = bufferTCP.str();
-    cout << "KeyID: " << bufferTCP_str << endl;
-
-    send(client_fd, bufferTCP_str.c_str(), bufferTCP_str.length(), 0);
-    // hash content of bufferTCP with SHAKE128
-    shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
-    string pom_param;
-    shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
-    qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
-    cout << "QKD key established:" << buffer_str << endl;
-
-    return pom_param;
-}
 
 /*
    Rekeying - client mode
@@ -734,7 +703,32 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip)
     else
     {
 
-        string buffer_str = getQkdKey(client_fd, qkd_ip);
+        CryptoPP::SHA3_256 hash;
+        CryptoPP::SHAKE128 shake128_hash;
+
+        system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
+
+        std::ifstream t("key");
+        std::stringstream buffer;
+        buffer << t.rdbuf();
+        // buffer to string
+        string buffer_str = buffer.str();
+
+        std::ifstream s("keyID");
+        std::stringstream bufferTCP;
+        bufferTCP << s.rdbuf();
+        // bufferTCP to string
+        string bufferTCP_str = bufferTCP.str();
+        cout << "KeyID: " << bufferTCP_str << endl;
+
+        send(client_fd, bufferTCP_str.c_str(), bufferTCP_str.length(), 0);
+        // hash content of bufferTCP with SHAKE128
+        shake128_hash.Update((const byte *)bufferTCP.str().c_str(), bufferTCP.str().length());
+        string pom_param;
+        shake128_hash.TruncatedFinal((byte *)pom_param.c_str(), 216);
+        qkd_parameter = pom_param + bufferTCP.str().substr(0, 216);
+        cout << "QKD key established:" << buffer_str << endl;
+
         // all parameters set, starting to creating hybrid key
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
@@ -850,7 +844,6 @@ int main(int argc, char *argv[])
 
         cout << "UDP connection established" << endl;
 
-        
         // Set TCP socket to non-blocking state
 
         while (status != 0)
