@@ -713,7 +713,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string 
         encode_key.Put(digest, sizeof(digest));
         encode_key.MessageEnd();
 
-        cout << "Key established: " << output_key << endl;
+       /* cout << "Key established: " << output_key << endl;
         int x = 0;
         for (unsigned int i = 0; i < output_key.length(); i += 2)
         {
@@ -721,11 +721,11 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string 
             key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
             x++;
         }
-
+        */
         cout << "Kyber cipher data: " << kyber_cipher_data_str << endl;
         cout << "XY coordinates: " << xy_str << endl;
 
-        send(client_fd, output_key.c_str(), output_key.length(), 0);
+        //send(client_fd, output_key.c_str(), output_key.length(), 0);
 
         CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
@@ -738,10 +738,16 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string 
         string key_one = hmac_hashing(salt, pqc_key);
         string key_two = hmac_hashing(salt, ecdh_key);
         string key_three = hmac_hashing(salt, buffer_str);
+        cout << "Key one: " << key_one << endl;
+        cout << "Key two: " << key_two << endl;
+        cout << "Key three: " << key_three << endl;
 
         string param_one = sha3_hashing(pqc_key, &kyber_cipher_data_str);
         string param_two = sha3_hashing(ecdh_key, &xy_str);
         string param_three = sha3_hashing(buffer_str, &qkd_parameter);
+        cout << "Param one: " << param_one << endl;
+        cout << "Param two: " << param_two << endl;
+        cout << "Param three: " << param_three << endl;
 
         string second_round_param_one = param_two + param_three;
         string second_round_param_two = param_one + param_three;
@@ -749,11 +755,17 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string 
         string second_round_key_one = hmac_hashing(key_one, second_round_param_one);
         string second_round_key_two = hmac_hashing(key_two, second_round_param_two);
         string second_round_key_three = hmac_hashing(key_three, second_round_param_three);
+        cout << "Second round key one: " << second_round_key_one << endl;
+        cout << "Second round key two: " << second_round_key_two << endl;
+        cout << "Second round key three: " << second_round_key_three << endl;
 
         string third_round_key_one = xorStrings(second_round_key_one, second_round_key_two);
         string fourth_round_key_one = xorStrings(third_round_key_one, second_round_key_three);
+        cout << "Third round key one: " << third_round_key_one << endl;
+        cout << "Fourth round key one: " << fourth_round_key_one << endl;
 
         string key = xorStrings(third_round_key_one, fourth_round_key_one);
+        cout << "Key: " << key << endl;
 
         // hash final key with SHA3_256
         hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
