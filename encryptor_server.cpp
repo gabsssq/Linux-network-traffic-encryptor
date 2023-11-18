@@ -860,7 +860,7 @@ int main(int argc, char *argv[])
 
                 // set socket to blocking mode
                 // fcntl(new_socket, F_SETFL, 0);
-                key = rekey_srv(new_socket, qkd_ip, bufferTCP);
+                key = rekey_srv(new_socket, qkd_ip);
                 // set socket to non-blocking mode
                 // Set TCP socket to NON-blocking mode
             }
