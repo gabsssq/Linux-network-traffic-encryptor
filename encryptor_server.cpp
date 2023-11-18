@@ -710,7 +710,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     else
     {
 
-        
         std::ifstream t("key");
         std::stringstream buffer;
         buffer << t.rdbuf();
@@ -820,10 +819,10 @@ int main(int argc, char *argv[])
         // UDP connection create
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
+        char bufferTCP[MAXLINE] = {0};
         if (argv[1] = NULL)
         {
             // QKD keyID receive
-            char bufferTCP[MAXLINE] = {0};
             read(new_socket, bufferTCP, MAXLINE);
             get_qkdkey(qkd_ip, bufferTCP);
         }
