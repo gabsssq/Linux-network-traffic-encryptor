@@ -457,6 +457,8 @@ void get_qkdkey(string qkd_ip, char bufferTCP[MAXLINE])
     myfile << bufferTCP;
     myfile.close();
 
+    cout << "QKD keyID recieved: " << bufferTCP << endl;
+
     // Obtain QKD key with keyID
     system(("./sym-ExpQKD 'server' " + qkd_ip).c_str());
 
