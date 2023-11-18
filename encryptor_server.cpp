@@ -860,11 +860,10 @@ int main(int argc, char *argv[])
             {
                 fcntl(new_socket, F_SETFL, fcntl(new_socket, F_GETFL, 0) & ~O_NONBLOCK);
 
-                // set socket to blocking mode
-                // fcntl(new_socket, F_SETFL, 0);
                 if (argv[1] != NULL)
                 {
                     // QKD keyID receive
+                    listen(new_socket, 3);
                     read(new_socket, bufferTCP, MAXLINE);
                     get_qkdkey(qkd_ip, bufferTCP);
                 }
