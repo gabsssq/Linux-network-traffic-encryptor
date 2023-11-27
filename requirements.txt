@@ -1,6 +1,0 @@
-git
-unzip
-g++
-make
-jq
-curl
