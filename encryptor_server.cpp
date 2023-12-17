@@ -646,7 +646,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
     CryptoPP::SHA3_256 hash;
     CryptoPP::SHAKE128 shake128_hash;
     byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
-    SecByteBlock key(AES::MAX_KEYLENGTH);
+    SecByteBlock sec_key(AES::MAX_KEYLENGTH);
     counter++;
     // get system time and convert it to string
     time_t now = time(0);
@@ -697,7 +697,7 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         for (unsigned int i = 0; i < output_key.length(); i += 2)
         {
             string bytestring = output_key.substr(i, 2);
-            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            sec_key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
             x++;
         }
 
@@ -705,7 +705,6 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         cout << "Kyber cipher data: " << kyber_cipher_data_str << endl;
         cout << "XY coordinates: " << xy_str << endl;
 
-        CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
         return sec_key;
     }
     else
@@ -750,13 +749,12 @@ SecByteBlock rekey_srv(int new_socket, string qkd_ip)
         for (unsigned int i = 0; i < output_key.length(); i += 2)
         {
             string bytestring = output_key.substr(i, 2);
-            key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            sec_key[x] = (char)strtol(bytestring.c_str(), NULL, 16);
             x++;
         }
 
         cout << "Key established:" << output_key << "\n";
-        output_key = output_key.substr(0, 32);
-        CryptoPP::SecByteBlock sec_key(reinterpret_cast<const byte *>(output_key.data()), output_key.size());
+
         return sec_key;
     }
 }
@@ -822,10 +820,12 @@ int main(int argc, char *argv[])
         int sockfd = udp_connection(&servaddr, &cliaddr, &len);
 
         char bufferTCP[MAXLINE] = {0};
+        
+        read(new_socket, bufferTCP, MAXLINE);
+
         if (argv[1] != NULL)
         {
             // QKD keyID receive
-            read(new_socket, bufferTCP, MAXLINE);
             get_qkdkey(qkd_ip, bufferTCP);
         }
 
