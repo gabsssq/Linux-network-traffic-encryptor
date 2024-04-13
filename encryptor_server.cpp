@@ -94,7 +94,7 @@ using CryptoPP::GCM;
 string xy_str;
 string kyber_cipher_data_str;
 string qkd_parameter;
-int counter = 0;
+std::atomic<int> counter = 0;
 
 string convertToString(char *a)
 {
@@ -102,12 +102,9 @@ string convertToString(char *a)
     return s;
 }
 
-std::atomic<int> enc_read_order = 0;
-std::atomic<int> dec_read_order = 0;
-std::atomic<int> enc_send_order = 1;
-std::atomic<int> dec_send_order = 1;
+std::atomic<int> read_order = 0;
+std::atomic<int> send_order = 1;
 std::mutex m1;
-std::mutex m2;
 
 // Virtual interface access
 int tun_open()
@@ -138,7 +135,7 @@ int tun_open()
 string data_recieve(int sockfd, struct sockaddr_in servaddr)
 {
 
-    socklen_t len;
+    socklen_t len = sizeof(servaddr);
     char buffer[MAXLINE] = {0};
     int n;
 
@@ -160,7 +157,7 @@ string data_recieve(int sockfd, struct sockaddr_in servaddr)
 string read_tun(int tundesc)
 {
 
-    char buf[MAXLINE - 60];
+    char buf[MAXLINE - 60] = {0};
     int nbytes = read(tundesc, buf, sizeof(buf));
     if (nbytes == -1)
     {
@@ -177,17 +174,14 @@ string read_tun(int tundesc)
 
 void write_tun(int tundesc, string message)
 {
-    char buf[MAXLINE - 60];
-    memcpy(buf, message.data(), message.length());
-    int nbytes = write(tundesc, buf, message.length());
+    write(tundesc, message.data(), message.length());
 }
 
 // Send encrypted data
-void send_encrypted(int sockfd, struct sockaddr_in servaddr, string cipher, socklen_t len)
+void send_encrypted(int sockfd, struct sockaddr_in servaddr, string cipher)
 {
-
     char *cp = &cipher[0];
-    sendto(sockfd, cp, cipher.length(), MSG_CONFIRM, (const struct sockaddr *)&servaddr, len);
+    sendto(sockfd, cp, cipher.length(), MSG_CONFIRM, (const struct sockaddr *)&servaddr, sizeof(servaddr));
 }
 
 // Data encryption
@@ -247,25 +241,12 @@ string decrypt_data(SecByteBlock *key, string cipher)
    Get encryption order after reading from tun interface
 */
 
-int enc_get_order()
+int get_order()
 {
     m1.lock();
-    enc_read_order = (enc_read_order % 100000) + 1;
-    int order = enc_read_order;
+    read_order = (read_order % 100000) + 1;
+    int order = read_order;
     m1.unlock();
-    return order;
-}
-
-/*
-   Get decription order after reading from socket
-*/
-
-int dec_get_order()
-{
-    m2.lock();
-    dec_read_order = (dec_read_order % 100000) + 1;
-    int order = enc_read_order;
-    m2.unlock();
     return order;
 }
 
@@ -287,7 +268,7 @@ bool D_E_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tun
         return false;
     }
 
-    int order = enc_get_order();
+    int order = get_order();
 //    cout << "\n dec order: " << order << endl;
 
     try
@@ -296,21 +277,21 @@ bool D_E_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tun
     }
     catch (...)
     {
-        while (order != enc_send_order)
+        while (order != send_order)
         {
 //            std::this_thread::sleep_for(std::chrono::nanoseconds(1));
         }
-        enc_send_order = (enc_send_order % 100000) +1;
+        send_order = (send_order % 100000) +1;
         return true;
     }
-    while (order != enc_send_order)
+    while (order != send_order)
     {
 //        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
     }
 
     write_tun(tundesc, data);
 //    cout << "\n dec send order: " << enc_send_order << endl;
-    enc_send_order = (enc_send_order % 100000) +1;
+    send_order = (send_order % 100000) +1;
     return true;
 }
 
@@ -323,7 +304,7 @@ bool D_E_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tun
    Returns false if there are no more data available on virtual interface.
 */
 
-bool E_N_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tundesc, socklen_t len, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e)
+bool E_N_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tundesc, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e)
 {
     string data = read_tun(tundesc);
 
@@ -332,27 +313,27 @@ bool E_N_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tun
         return false;
     }
 
-    int order = enc_get_order();
+    int order = get_order();
 //    cout << "\n enc order: " << order << endl;
     string encrypted_data = encrypt_data(key, data, prng, &e);
 
-    while (order != enc_send_order)
+    while (order != send_order)
     {
 //        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
     }
 
-    send_encrypted(sockfd, servaddr, encrypted_data, len);
+    send_encrypted(sockfd, servaddr, encrypted_data);
 //    cout << "\n enc send order: " << enc_send_order << endl;
-    enc_send_order = (enc_send_order % 100000) +1;
+    send_order = (send_order % 100000) +1;
     return true;
 }
 
 // Thread function for both encryption and decryption
-void thread_encrypt(int sockfd, struct sockaddr_in servaddr, struct sockaddr_in cliaddr, SecByteBlock *key, int tundesc, socklen_t len, std::atomic<int> *threads, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e)
+void thread_encrypt(int sockfd, struct sockaddr_in servaddr, struct sockaddr_in cliaddr, SecByteBlock *key, int tundesc, std::atomic<int> *threads, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e)
 {
     for (int i = 0; i < 100; i++)
     {
-        while (E_N_C_R(sockfd, cliaddr, key, tundesc, len, prng, e))
+        while (E_N_C_R(sockfd, cliaddr, key, tundesc, prng, e))
         {
         }
         while (D_E_C_R(sockfd, servaddr, key, tundesc))
@@ -419,7 +400,7 @@ int tcp_connection(int *pt_server_fd)
 }
 
 // UDP socket creation and "Hello" messages exchange
-int udp_connection(struct sockaddr_in *pt_servaddr, struct sockaddr_in *pt_cliaddr, socklen_t *pt_len)
+int udp_connection(struct sockaddr_in *pt_servaddr, struct sockaddr_in *pt_cliaddr)
 {
     int sockfd;
     struct sockaddr_in servaddr, cliaddr;
@@ -463,7 +444,6 @@ int udp_connection(struct sockaddr_in *pt_servaddr, struct sockaddr_in *pt_cliad
     fcntl(sockfd, F_SETFL, O_NONBLOCK);
     *pt_servaddr = servaddr;
     *pt_cliaddr = cliaddr;
-    *pt_len = len;
     return sockfd;
 }
 
@@ -855,7 +835,6 @@ int main(int argc, char *argv[])
 
     // Variables for UDP/TCP connections
     int server_fd;
-    socklen_t len;
     struct sockaddr_in servaddr, cliaddr;
 
     // Get count of runnable threads (excluding main thread)
@@ -877,7 +856,7 @@ int main(int argc, char *argv[])
         // string pqc_key = get_pqckey(new_socket);
 
         // UDP connection create
-        int sockfd = udp_connection(&servaddr, &cliaddr, &len);
+        int sockfd = udp_connection(&servaddr, &cliaddr);
 
         char bufferTCP[MAXLINE] = {0};
         
@@ -931,12 +910,12 @@ int main(int argc, char *argv[])
             }
             fcntl(new_socket, F_SETFL, O_NONBLOCK);
             // Create runnable thread if there are data available either on tun interface or UDP socket
-            if (E_N_C_R(sockfd, cliaddr, &key, tundesc, len, &prng, e) || D_E_C_R(sockfd, servaddr, &key, tundesc))
+            if (E_N_C_R(sockfd, cliaddr, &key, tundesc, &prng, e) || D_E_C_R(sockfd, servaddr, &key, tundesc))
             {
                 if (threads_available > 0)
                 {
                     threads_available -= 1;
-                    std::thread(thread_encrypt, sockfd, servaddr, cliaddr, &key, tundesc, len, &threads_available, &prng, e).detach();
+                    std::thread(thread_encrypt, sockfd, servaddr, cliaddr, &key, tundesc, &threads_available, &prng, e).detach();
                 }
             }
 
@@ -949,7 +928,7 @@ int main(int argc, char *argv[])
             // Help with encryption/decryption if all runnable threads are created
             if (threads_available == 0)
             {
-                while (E_N_C_R(sockfd, cliaddr, &key, tundesc, len, &prng, e))
+                while (E_N_C_R(sockfd, cliaddr, &key, tundesc, &prng, e))
                 {
                 }
 
@@ -961,7 +940,7 @@ int main(int argc, char *argv[])
             // Send "KeepAlive" message via UDP every 60s to keep dynamic NAT translation - no need to encrypt
             if (time(NULL) - ref >= 60)
             {
-                sendto(sockfd, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *)&cliaddr, len);
+                sendto(sockfd, keepalive, strlen(keepalive), MSG_CONFIRM, (const struct sockaddr *)&cliaddr, sizeof(cliaddr));
                 ref = time(NULL);
             }
         }
