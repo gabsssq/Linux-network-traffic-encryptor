@@ -948,7 +948,7 @@ int main(int argc, char *argv[])
             cout << "New key established" << endl;
 
             // Trigger Rekey after some period of time (1 hour)
-            while (time(NULL) - ref <= 30)
+            while (time(NULL) - ref <= 3600)
             {
 
                 // Get TCP connection status
