@@ -464,10 +464,27 @@ string get_pqckey(int new_socket)
        3) Server encapsulates PQC key with client's public key and sends to client
     */
     std::vector<unsigned char> pqc_buffer(MAXLINE);
-    read(new_socket, &pqc_buffer[0], MAXLINE);
-    // read pqc buffer as string
-    string pqc_string = convertToString((char *)&pqc_buffer[0]);
 
+    std::ifstream pk("PQC_PK");
+    std::stringstream bufferPK;
+    bufferPK << pk.rdbuf();
+    string buffer_PK = bufferPK.str();
+
+    if (buffer_PK.empty())
+    {
+        read(new_socket, &pqc_buffer[0], MAXLINE);
+    }
+
+    else
+    {
+        int x = 0;
+        for (unsigned int i = 0; i < buffer_PK.length(); i += 2)
+        {
+            string bytestring = buffer_PK.substr(i, 2);
+            pqc_buffer[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
+    }
     std::vector<uint8_t> _pkey(kyber768_kem::PKEY_LEN, 0);
     _pkey = pqc_buffer;
 

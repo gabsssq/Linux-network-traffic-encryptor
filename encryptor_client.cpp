@@ -466,9 +466,43 @@ string get_pqckey(int client_fd)
     prng_pqc.read(d);
     prng_pqc.read(z);
 
-    // Generate a keypair
-    kyber768_kem::keygen(d, z, pkey, skey);
+    std::ifstream pk("PQC_PK");
+    std::stringstream bufferPK;
+    bufferPK << pk.rdbuf();
+    // buffer to string
+    string buffer_PK = bufferPK.str();
 
+    std::ifstream sk("PQC_SK");
+    std::stringstream bufferSK;
+    bufferSK << sk.rdbuf();
+    // buffer to string
+    string buffer_SK = bufferSK.str();
+
+    bool exchange = (buffer_PK.empty() || buffer_SK.empty());
+    if (exchange)
+    {
+        // Generate a keypair
+        kyber768_kem::keygen(d, z, pkey, skey);
+    }
+
+    else
+    {
+        cout << "Reading PQC keys from files" << endl;
+        int x = 0;
+        for (int i = 0; i < buffer_PK.length(); i += 2)
+        {
+            string bytestring = buffer_PK.substr(i, 2);
+            pkey[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
+        x = 0;
+        for (int i = 0; i < buffer_SK.length(); i += 2)
+        {
+            string bytestring = buffer_SK.substr(i, 2);
+            skey[x] = (char)strtol(bytestring.c_str(), NULL, 16);
+            x++;
+        }
+    }
     // Fill up seed required for key encapsulation, using PRNG
     prng_pqc.read(m);
 
@@ -478,7 +512,11 @@ string get_pqckey(int client_fd)
        encapsulated PQC key
     */
     std::vector<unsigned char> pqc_buffer(MAXLINE);
-    send(client_fd, pkey.data(), pkey.size(), 0);
+    if (exchange)
+    {
+        cout << "Sending PQC PK" << endl;
+        send(client_fd, pkey.data(), pkey.size(), 0);
+    }
     read(client_fd, &pqc_buffer[0], MAXLINE);
 
     std::vector<uint8_t> _cipher(kyber768_kem::CIPHER_LEN, 0);
@@ -526,12 +564,12 @@ string PerformECDHKeyExchange(int client_fd)
     CryptoPP::HexEncoder privEncoder(new CryptoPP::StringSink(privKey), false);
     privEncoder.Put(privateKey, privateKey.size());
     privEncoder.MessageEnd();
-    cout << "Private key: " << privKey << std::endl;
+    //cout << "Private key: " << privKey << std::endl;
     string pubKey;
     CryptoPP::HexEncoder pubEncoder(new CryptoPP::StringSink(pubKey), false);
     pubEncoder.Put(publicKey, publicKey.size());
     pubEncoder.MessageEnd();
-    cout << "Public key: " << pubKey << std::endl;
+    //cout << "Public key: " << pubKey << std::endl;
 
     // Send public key to the server
     send(client_fd, publicKey.BytePtr(), publicKey.SizeInBytes(), 0);
@@ -540,7 +578,7 @@ string PerformECDHKeyExchange(int client_fd)
     CryptoPP::HexEncoder sentEncoder(new CryptoPP::StringSink(sentKey), false);
     sentEncoder.Put(publicKey, publicKey.size());
     sentEncoder.MessageEnd();
-    cout << "Sent key: " << sentKey << std::endl;
+    //cout << "Sent key: " << sentKey << std::endl;
     // Receive the server's public key
     CryptoPP::SecByteBlock receivedKey(dh.PublicKeyLength());
     // CryptoPP::SecByteBlock dump(dh.PublicKeyLength()* 6 -200);
@@ -552,7 +590,7 @@ string PerformECDHKeyExchange(int client_fd)
     CryptoPP::HexEncoder recEncoder(new CryptoPP::StringSink(recKey), false);
     recEncoder.Put(receivedKey, receivedKey.size());
     recEncoder.MessageEnd();
-    cout << "Received key: " << recKey << std::endl;
+    //cout << "Received key: " << recKey << std::endl;
     // Derive shared secret
     CryptoPP::SecByteBlock sharedSecret(dh.AgreedValueLength());
     dh.Agree(sharedSecret, privateKey, receivedKey);
@@ -562,7 +600,7 @@ string PerformECDHKeyExchange(int client_fd)
     hexEncoder.Put(sharedSecret, sharedSecret.size());
     hexEncoder.MessageEnd();
 
-    std::cout << "Hexadecimal representation: " << hex << std::endl;
+    //std::cout << "Hexadecimal representation: " << hex << std::endl;
 
     // Take first 432 HEX chars = 216 Bytes
     xy_str = (pubKey + recKey).substr(0, 432);
@@ -856,7 +894,6 @@ int main(int argc, char *argv[])
 
         // Create TCP connection
         int client_fd = tcp_connection(srv_ip);
-        
 
         // TCP error propagation
         if (client_fd == -1)
