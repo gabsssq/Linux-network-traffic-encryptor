@@ -1,4 +1,4 @@
-#include <kyber512_kem.hpp>
+#include <kyber768_kem.hpp>
 #include <thread>
 #include <ctime>
 #include <chrono>
@@ -44,7 +44,7 @@ using CryptoPP::AutoSeededRandomPool;
 
 #include "cryptopp/eccrypto.h"
 using CryptoPP::ECDH;
-using CryptoPP::ECP;
+using CryptoPP::EC2N;
 
 #include "cryptopp/secblock.h"
 using CryptoPP::SecByteBlock;
@@ -261,14 +261,14 @@ bool D_E_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tun
 {
     string data;
     string encrypted_data = data_recieve(sockfd, servaddr);
-
-    if (encrypted_data.length() == 0)
+// Encrypted data should be at least 33 char long (16B nonce, 16B auth tag)
+    if (encrypted_data.length() < 33)
     {
         return false;
     }
 
     int order = get_order();
-//    cout << "\n dec order:" << order << endl;
+
     try
     {
         data = decrypt_data(key, encrypted_data);
@@ -277,14 +277,14 @@ bool D_E_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tun
     {
         while (order != send_order)
         {
-//            std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+
         }
         send_order = (send_order % 100000) +1;
         return true;
     }
     while (order != send_order)
     {
-//        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+
     }
     write_tun(tundesc, data);
     send_order = (send_order % 100000) +1;
@@ -309,31 +309,29 @@ bool E_N_C_R(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tun
     }
 
     int order = get_order();
-//    cout << "\n enc order:" << order << endl;
 
     string encrypted_data = encrypt_data(key, data, prng, &e);
 
     while (order != send_order)
     {
-//        std::this_thread::sleep_for(std::chrono::nanoseconds(1));
+
     }
 
     send_encrypted(sockfd, servaddr, encrypted_data);
-//    cout << "\n enc send order:" << enc_send_order << endl;
     send_order = (send_order % 100000) + 1;
     return true;
 }
 
 // Thread function for both encryption and decryption
-void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key, int tundesc, std::atomic<int> *threads, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e)
+void thread_encrypt(int sockfd, struct sockaddr_in servaddr, SecByteBlock *key_encrypt, SecByteBlock *key_decrypt, int tundesc, std::atomic<int> *threads, AutoSeededRandomPool *prng, GCM<AES, CryptoPP::GCM_64K_Tables>::Encryption e)
 {
     for (int i = 0; i < 100; i++)
     {
-        while (E_N_C_R(sockfd, servaddr, key, tundesc, prng, e))
+        while (E_N_C_R(sockfd, servaddr, key_encrypt, tundesc, prng, e))
         {
         }
 
-        while (D_E_C_R(sockfd, servaddr, key, tundesc))
+        while (D_E_C_R(sockfd, servaddr, key_decrypt, tundesc))
         {
         }
     }
@@ -447,11 +445,11 @@ string get_pqckey(int client_fd)
     auto z = std::span<uint8_t, SEED_LEN>(_z);
 
     // Public/private keypair
-    std::vector<uint8_t> _pkey(kyber512_kem::PKEY_LEN, 0);
-    std::vector<uint8_t> _skey(kyber512_kem::SKEY_LEN, 0);
+    std::vector<uint8_t> _pkey(kyber768_kem::PKEY_LEN, 0);
+    std::vector<uint8_t> _skey(kyber768_kem::SKEY_LEN, 0);
 
-    auto pkey = std::span<uint8_t, kyber512_kem::PKEY_LEN>(_pkey);
-    auto skey = std::span<uint8_t, kyber512_kem::SKEY_LEN>(_skey);
+    auto pkey = std::span<uint8_t, kyber768_kem::PKEY_LEN>(_pkey);
+    auto skey = std::span<uint8_t, kyber768_kem::SKEY_LEN>(_skey);
 
     // Seed required for key encapsulation
     std::vector<uint8_t> _m(SEED_LEN, 0);
@@ -469,7 +467,7 @@ string get_pqckey(int client_fd)
     prng_pqc.read(z);
 
     // Generate a keypair
-    kyber512_kem::keygen(d, z, pkey, skey);
+    kyber768_kem::keygen(d, z, pkey, skey);
 
     // Fill up seed required for key encapsulation, using PRNG
     prng_pqc.read(m);
@@ -483,7 +481,7 @@ string get_pqckey(int client_fd)
     send(client_fd, pkey.data(), pkey.size(), 0);
     read(client_fd, &pqc_buffer[0], MAXLINE);
 
-    std::vector<uint8_t> _cipher(kyber512_kem::CIPHER_LEN, 0);
+    std::vector<uint8_t> _cipher(kyber768_kem::CIPHER_LEN, 0);
     _cipher = pqc_buffer;
 
     // take the first 216 bytes of the cipher text and put it in the new variable called cipher_data
@@ -491,8 +489,8 @@ string get_pqckey(int client_fd)
     kyber_cipher_data_str = kyber_utils::to_hex(cipher_data);
 
     // Decapsulate cipher text and obtain KDF
-    auto cipher = std::span<uint8_t, kyber512_kem::CIPHER_LEN>(_cipher);
-    auto rkdf = kyber512_kem::decapsulate(skey, cipher);
+    auto cipher = std::span<uint8_t, kyber768_kem::CIPHER_LEN>(_cipher);
+    auto rkdf = kyber768_kem::decapsulate(skey, cipher);
     rkdf.squeeze(shrd_key);
     string pqc_key = kyber_utils::to_hex(shrd_key);
 
@@ -513,13 +511,12 @@ void help()
 
 string PerformECDHKeyExchange(int client_fd)
 {
-
     // close(client_fd);
     // client_fd = tcp_connection(srv_ip);
     CryptoPP::AutoSeededRandomPool rng;
 
     // Set up the NIST P-521 curve domain
-    CryptoPP::ECDH<CryptoPP::ECP>::Domain dh(CryptoPP::ASN1::secp521r1());
+    CryptoPP::ECDH<CryptoPP::EC2N>::Domain dh(CryptoPP::ASN1::sect571k1());
     // Generate ECDH keys
     CryptoPP::SecByteBlock privateKey(dh.PrivateKeyLength());
     CryptoPP::SecByteBlock publicKey(dh.PublicKeyLength());
@@ -567,39 +564,14 @@ string PerformECDHKeyExchange(int client_fd)
 
     std::cout << "Hexadecimal representation: " << hex << std::endl;
 
-    CryptoPP::Integer x = dh.GetGroupParameters().GetSubgroupGenerator().x;
-    CryptoPP::Integer y = dh.GetGroupParameters().GetSubgroupGenerator().y;
-    // take first 216 bytes of the x and y coordinates
-    string x_str = CryptoPP::IntToString(x);
-    string y_str = CryptoPP::IntToString(y);
-    xy_str = x_str.substr(0, 216) + y_str.substr(0, 216);
-    /*
-    // Close the socket
-    close(custom_connection);
-    client_fd = tcp_connection(srv_ip);
-    */
+    // Take first 432 HEX chars = 216 Bytes
+    xy_str = (pubKey + recKey).substr(0, 432);
 
     return hex;
 }
 
 string hmac_hashing(string salt, string key)
 {
-    /*
-    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)salt.c_str(), salt.length());
-
-    hmac.Update((const byte *)key.c_str(), key.length());
-    byte hmac_digest[CryptoPP::SHA3_256::DIGESTSIZE];
-    hmac.Final(hmac_digest);
-
-    // write hmac_digest to string
-    CryptoPP::HexEncoder encoder;
-    string hmac_output;
-    encoder.Attach(new CryptoPP::StringSink(hmac_output));
-    encoder.Put(hmac_digest, sizeof(hmac_digest));
-    encoder.MessageEnd();
-
-    return hmac_output;
-    */
     const size_t desired_length = 216;
 
     string padded_key(salt);
@@ -616,7 +588,7 @@ string hmac_hashing(string salt, string key)
         padded_message.resize(desired_length, '\0');
     }
 
-    CryptoPP::HMAC<CryptoPP::SHA3_256> hmac((const byte *)padded_key.data(), padded_key.size());
+    CryptoPP::HMAC<CryptoPP::SHA3_512> hmac((const byte *)padded_key.data(), padded_key.size());
     string result;
 
     CryptoPP::StringSource(padded_message, true, new CryptoPP::HashFilter(hmac, new CryptoPP::HexEncoder(new CryptoPP::StringSink(result))));
@@ -627,9 +599,9 @@ string hmac_hashing(string salt, string key)
 string sha3_hashing(string key, string *public_value)
 {
 
-    CryptoPP::SHA3_256 hash;
+    CryptoPP::SHA3_512 hash;
 
-    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
+    byte digest[CryptoPP::SHA3_512::DIGESTSIZE];
     string concat = *public_value + key;
     hash.CalculateDigest(digest, (byte *)concat.c_str(), concat.length());
 
@@ -665,7 +637,7 @@ string xorStrings(const string &str1, const string &str2)
 }
 
 string get_qkdkey(string qkd_ip, int client_fd){
-    CryptoPP::SHA3_256 hash;
+    CryptoPP::SHA3_512 hash;
         CryptoPP::SHAKE128 shake128_hash;
 
         system(("./sym-ExpQKD 'client' " + qkd_ip).c_str());
@@ -701,32 +673,27 @@ string get_qkdkey(string qkd_ip, int client_fd){
    Client get new key from QKD server, combine it with PQC key
    and than send its ID to gateway in server mode.
 */
-SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string buffer_str)
+SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string buffer_str, string pqc_key, string ecdh_key)
 {
-    CryptoPP::SHA3_256 hash;
+    CryptoPP::SHA3_512 hash;
     CryptoPP::SHAKE128 shake128_hash;
-    byte digest[CryptoPP::SHA3_256::DIGESTSIZE];
-    SecByteBlock sec_key(AES::MAX_KEYLENGTH);
+    byte digest[CryptoPP::SHA3_512::DIGESTSIZE];
+    SecByteBlock sec_key(AES::MAX_KEYLENGTH*2);
 
-    counter++;
     // get system time and convert it to string
     time_t now = time(0);
     tm *ltm = localtime(&now);
-    string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min) + std::to_string(ltm->tm_sec);
+    string time = std::to_string(ltm->tm_hour) + std::to_string(ltm->tm_min);
     string salt = time + std::to_string(counter);
     salt = "wBvFh#7QjH8tLpNkRsYx1z3uA2s4Xc6WvBnMlKjIgFhDdSfGhJkLpOeQrTbUyVtXyZaCxwVuNmLkIjHgFdDsAaSdFgHjKlQwErTyUiOpAsDfGhJkLpOeRtYuIwQeRtYuI";
 
-    if (qkd_ip.empty())
+    if (qkd_ip.empty() && counter > 0)
     {
     const char* rekey = "Rekey";
     send(client_fd, rekey, strlen(rekey), 0);
     }
 
-    string pqc_key = get_pqckey(client_fd);
-    cout << "PQC key: " << pqc_key << endl;
-    listen(client_fd, 3);
-    string ecdh_key = PerformECDHKeyExchange(client_fd);
-    cout << "ECDH key: " << ecdh_key << endl;
+    counter++;
 
     if (qkd_ip.empty())
     {
@@ -751,7 +718,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string 
         string key = xorStrings(second_round_key_one, second_round_key_two);
         cout << "Key: " << key << endl;
 
-        // hash final key with SHA3_256
+        // hash final key with SHA3_512
         hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
         CryptoPP::HexEncoder encode_key;
         string output_key;
@@ -812,7 +779,7 @@ SecByteBlock rekey_cli(int client_fd, string qkd_ip, const char *srv_ip, string 
         string key = xorStrings(third_round_key_one, fourth_round_key_one);
         cout << "Key: " << key << endl;
 
-        // hash final key with SHA3_256
+        // hash final key with SHA3_512
         hash.CalculateDigest(digest, (byte *)key.c_str(), key.length());
         CryptoPP::HexEncoder encode_key;
         string output_key;
@@ -863,7 +830,9 @@ int main(int argc, char *argv[])
     struct sockaddr_in servaddr;
 
     // AES key variable creation
-    SecByteBlock key(AES::MAX_KEYLENGTH);
+    SecByteBlock key_encrypt(AES::MAX_KEYLENGTH);
+    SecByteBlock key_decrypt(AES::MAX_KEYLENGTH);
+    SecByteBlock Tempkey(AES::MAX_KEYLENGTH*2);
 
     // Get count of runnable threads (excluding main thread)
     int threads_max = std::thread::hardware_concurrency() - 1;
@@ -877,6 +846,9 @@ int main(int argc, char *argv[])
 
     // Time reference variable for rekey purposes
     time_t ref = time(NULL);
+
+    string pqc_key, ecdh_key;
+
 
     while (1)
     {
@@ -906,7 +878,17 @@ int main(int argc, char *argv[])
 
         cout << "UDP connection established" << endl;
 
-        // Set TCP socket to non-blocking state
+        if (qkd_ip.empty() && counter == 0)
+        {
+        const char* rekey = "Rekey";
+        send(client_fd, rekey, strlen(rekey), 0);
+
+        pqc_key = get_pqckey(client_fd);
+        cout << "PQC key: " << pqc_key << endl;
+        listen(client_fd, 3);
+        ecdh_key = PerformECDHKeyExchange(client_fd);
+        cout << "ECDH key: " << ecdh_key << endl;
+        }
 
         while (status != 0)
         {
@@ -918,15 +900,18 @@ int main(int argc, char *argv[])
             {
             bufferTCP_str = get_qkdkey(qkd_ip, client_fd);
             }
-            
-            key = rekey_cli(client_fd, qkd_ip, srv_ip, bufferTCP_str);
+
+            Tempkey = rekey_cli(client_fd, qkd_ip, srv_ip, bufferTCP_str, pqc_key, ecdh_key);
+            memcpy (key_decrypt, Tempkey, AES::MAX_KEYLENGTH);
+            memcpy (key_encrypt, Tempkey + AES::MAX_KEYLENGTH, AES::MAX_KEYLENGTH);
+
             ref = time(NULL);
             fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
             cout << "New key established" << endl;
 
             // Trigger Rekey after some period of time (1 hour)
-            while (time(NULL) - ref <= 3600)
+            while (time(NULL) - ref <= 30)
             {
 
                 // Get TCP connection status
@@ -939,12 +924,12 @@ int main(int argc, char *argv[])
                 }
 
                 // Create runnable thread if there are data available either on tun interface or UDP socket
-                if (E_N_C_R(sockfd, servaddr, &key, tundesc, &prng, e) || D_E_C_R(sockfd, servaddr, &key, tundesc))
+                if (E_N_C_R(sockfd, servaddr, &key_encrypt, tundesc, &prng, e) || D_E_C_R(sockfd, servaddr, &key_decrypt, tundesc))
                 {
                     if (threads_available > 0)
                     {
                         threads_available -= 1;
-                        std::thread(thread_encrypt, sockfd, servaddr, &key, tundesc, &threads_available, &prng, e).detach();
+                        std::thread(thread_encrypt, sockfd, servaddr, &key_encrypt, &key_decrypt, tundesc, &threads_available, &prng, e).detach();
                     }
                 }
 
@@ -957,11 +942,11 @@ int main(int argc, char *argv[])
                 // Help with encryption/decryption if all runnable threads are created
                 if (threads_available == 0)
                 {
-                    while (E_N_C_R(sockfd, servaddr, &key, tundesc, &prng, e))
+                    while (E_N_C_R(sockfd, servaddr, &key_encrypt, tundesc, &prng, e))
                     {
                     }
 
-                    while (D_E_C_R(sockfd, servaddr, &key, tundesc))
+                    while (D_E_C_R(sockfd, servaddr, &key_decrypt, tundesc))
                     {
                     }
                 }
